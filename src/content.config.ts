@@ -6,13 +6,20 @@ const blog = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    pubDate: z.coerce.date(),
+    slug: z.string().optional(),
+    // Accept both 'date' and 'pubDate' for compatibility
+    date: z.coerce.date().optional(),
+    pubDate: z.coerce.date().optional(),
     updatedDate: z.coerce.date().optional(),
     author: z.string().default('Fiberplane Team'),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     image: z.string().optional(),
-  }),
+  }).transform((data) => ({
+    ...data,
+    // Normalize to pubDate for consistency
+    pubDate: data.pubDate || data.date || new Date(),
+  })),
 });
 
 export const collections = {
