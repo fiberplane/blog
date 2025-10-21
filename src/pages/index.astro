@@ -94,7 +94,8 @@ const formatFullDate = (date: Date) => {
   .posts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 2rem;
+    gap: 0;
+    border: 1px solid var(--color-border);
   }
 
   /* Featured post takes up more space */
@@ -104,16 +105,26 @@ const formatFullDate = (date: Date) => {
 
   .post-card {
     background-color: var(--color-bg);
-    border-radius: 0.75rem;
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid var(--color-border);
+    transition: background-color 0.2s ease;
+    border-left: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border);
   }
 
+  /* First card (featured) - no top border since grid has one */
+  .post-card:first-child {
+    border-top: none;
+  }
+
+  /* First column cards - no left border since grid has one */
+  .post-card:nth-child(odd) {
+    border-left: none;
+  }
+
+  /* Second column cards keep their left border to divide columns */
+
   .post-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    border-color: var(--color-border-hover, var(--color-border));
+    background-color: var(--color-bg-secondary);
   }
 
   .post-link {
@@ -242,7 +253,6 @@ const formatFullDate = (date: Date) => {
   @media (max-width: 1024px) {
     .posts-grid {
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
     }
 
     .post-card.featured {
@@ -282,7 +292,16 @@ const formatFullDate = (date: Date) => {
 
     .posts-grid {
       grid-template-columns: 1fr;
-      gap: 1.25rem;
+    }
+
+    /* In single column, remove all right borders and only last card has no bottom border */
+    .post-card {
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .post-card:last-child {
+      border-bottom: none;
     }
 
     .post-content {
@@ -294,14 +313,4 @@ const formatFullDate = (date: Date) => {
     }
   }
 
-  /* Dark mode adjustments */
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-border-hover: hsl(0, 0%, 30%);
-    }
-
-    .post-card:hover {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    }
-  }
 </style>
