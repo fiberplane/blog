@@ -1,0 +1,307 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const allPosts = await getCollection('blog');
+
+// Filter out drafts and sort by date (newest first)
+const publishedPosts = allPosts
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
+const formatFullDate = (date: Date) => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
+---
+
+<BaseLayout
+  title="Blog"
+  description="Insights and updates from the Fiberplane team on developer tools, observability, and collaborative debugging."
+>
+  <div class="blog-container">
+    <header class="blog-header">
+      <h1>Blog</h1>
+    </header>
+
+    <div class="posts-grid">
+      {publishedPosts.map((post, index) => (
+        <article class:list={['post-card', { 'featured': index === 0 }]}>
+          <a href={`/blog/${post.id}`} class="post-link">
+            {post.data.image && (
+              <div class="post-image">
+                <img src={post.data.image} alt={post.data.title} loading="lazy" />
+              </div>
+            )}
+            <div class="post-content">
+              <div class="post-meta">
+                <time datetime={post.data.pubDate.toISOString()} title={formatFullDate(post.data.pubDate)}>
+                  {formatDate(post.data.pubDate)}
+                </time>
+              </div>
+              <h2>{post.data.title}</h2>
+              <p class="post-description">{post.data.description}</p>
+              {post.data.tags.length > 0 && (
+                <div class="tags">
+                  {post.data.tags.map((tag) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </a>
+        </article>
+      ))}
+    </div>
+
+    {publishedPosts.length === 0 && (
+      <div class="empty-state">
+        <p>No posts published yet. Check back soon!</p>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .blog-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+  }
+
+  .blog-header {
+    margin-bottom: 3rem;
+  }
+
+  .blog-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+    color: var(--color-heading);
+  }
+
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+  }
+
+  /* Featured post takes up more space */
+  .post-card.featured {
+    grid-column: span 2;
+  }
+
+  .post-card {
+    background-color: var(--color-bg);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--color-border);
+  }
+
+  .post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: var(--color-border-hover, var(--color-border));
+  }
+
+  .post-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* Featured post has horizontal layout on larger screens */
+  .post-card.featured .post-link {
+    flex-direction: row;
+  }
+
+  .post-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background-color: var(--color-bg-secondary);
+    flex-shrink: 0;
+  }
+
+  .post-card.featured .post-image {
+    width: 50%;
+    aspect-ratio: auto;
+  }
+
+  .post-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .post-card:hover .post-image img {
+    transform: scale(1.05);
+  }
+
+  .post-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .post-card.featured .post-content {
+    padding: 2rem;
+    justify-content: center;
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .post-meta time {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .post-card h2 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+    color: var(--color-heading);
+    transition: color 0.2s ease;
+  }
+
+  .post-card.featured h2 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .post-card:hover h2 {
+    color: var(--color-accent-dark);
+  }
+
+  .post-description {
+    font-size: 0.9375rem;
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    flex: 1;
+  }
+
+  .post-card.featured .post-description {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+
+  .tag {
+    padding: 0.25rem 0.625rem;
+    background-color: var(--color-accent-light);
+    color: var(--color-accent-dark);
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--color-text-secondary);
+  }
+
+  .empty-state p {
+    font-size: 1.125rem;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1024px) {
+    .posts-grid {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .post-card.featured {
+      grid-column: span 1;
+    }
+
+    .post-card.featured .post-link {
+      flex-direction: column;
+    }
+
+    .post-card.featured .post-image {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+    }
+
+    .post-card.featured h2 {
+      font-size: 1.5rem;
+    }
+
+    .post-card.featured .post-description {
+      font-size: 0.9375rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .blog-container {
+      padding: 2rem 1rem;
+    }
+
+    .blog-header {
+      margin-bottom: 2rem;
+    }
+
+    .blog-header h1 {
+      font-size: 2rem;
+    }
+
+    .posts-grid {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    .post-content {
+      padding: 1.25rem;
+    }
+
+    .post-card h2 {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* Dark mode adjustments */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-border-hover: hsl(0, 0%, 30%);
+    }
+
+    .post-card:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+  }
+</style>
