@@ -1,0 +1,116 @@
+---
+interface Props {
+  pkg?: string;
+  type?: string;
+}
+
+const { pkg, type } = Astro.props;
+---
+
+<div class="package-managers">
+  <div class="tabs">
+    <button class="tab active" data-pm="npm">npm</button>
+    <button class="tab" data-pm="pnpm">pnpm</button>
+    <button class="tab" data-pm="yarn">yarn</button>
+  </div>
+
+  <div class="tab-content">
+    <div class="tab-panel active" data-pm="npm">
+      <pre><code>npm {type === 'add' ? 'install' : type || 'install'} {pkg}</code></pre>
+    </div>
+    <div class="tab-panel" data-pm="pnpm">
+      <pre><code>pnpm {type || 'add'} {pkg}</code></pre>
+    </div>
+    <div class="tab-panel" data-pm="yarn">
+      <pre><code>yarn {type === 'create' ? 'create' : type || 'add'} {pkg}</code></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.package-managers').forEach(container => {
+    const tabs = container.querySelectorAll('.tab');
+    const panels = container.querySelectorAll('.tab-panel');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const pm = tab.getAttribute('data-pm');
+
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Update active panel
+        panels.forEach(p => {
+          if (p.getAttribute('data-pm') === pm) {
+            p.classList.add('active');
+          } else {
+            p.classList.remove('active');
+          }
+        });
+      });
+    });
+  });
+</script>
+
+<style>
+  .package-managers {
+    margin: 1.5rem 0;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .tabs {
+    display: flex;
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tab {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-family: 'Geist Mono', monospace;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    transition: all 0.2s;
+  }
+
+  .tab:hover {
+    color: var(--color-heading);
+    background-color: var(--color-bg);
+  }
+
+  .tab.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+  }
+
+  .tab-content {
+    position: relative;
+  }
+
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  .tab-panel pre {
+    margin: 0;
+    padding: 1.25rem;
+    background-color: var(--color-code-bg);
+    border-radius: 0;
+  }
+
+  .tab-panel code {
+    font-family: 'Geist Mono', monospace;
+    font-size: 0.875rem;
+    color: var(--color-text);
+  }
+</style>

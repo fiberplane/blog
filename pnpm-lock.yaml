@@ -23,9 +23,15 @@ importers:
       astro:
         specifier: ^5.6.1
         version: 5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3)
+      astro-lazy-youtube-embed:
+        specifier: ^0.5.4
+        version: 0.5.4(astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3))
       sharp:
         specifier: ^0.34.2
         version: 0.34.4
+      starlight-package-managers:
+        specifier: ^0.11.1
+        version: 0.11.1(@astrojs/starlight@0.36.1(astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3)))
       starlight-theme-black:
         specifier: ^0.6.0
         version: 0.6.0(@astrojs/starlight@0.36.1(astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3)))
@@ -678,6 +684,11 @@ packages:
     resolution: {integrity: sha512-u+zHMqo/QNLE2eqYRCrK3+XMlKakv33Bzuz+56V1gs8H0y6TZ0hIi3VNbIxeTn51NLn+mJfUV/A0kMNfE4rANw==}
     peerDependencies:
       astro: ^4.0.0-beta || ^5.0.0-beta || ^3.3.0
+
+  astro-lazy-youtube-embed@0.5.4:
+    resolution: {integrity: sha512-6Nd52ndiC7qM9jBC2/iAVsgbGMLBEHo0NfyECTyvsoKlei5Crl8S279Y8QhbKei+L6/FPSIijRV+ztY9/Pd3Wg==}
+    peerDependencies:
+      astro: ^2.0.0 || ^3.0.0-beta || ^4.0.0-beta || ^5.0.0-beta
 
   astro@5.14.6:
     resolution: {integrity: sha512-MSdjKt2W2a56x868DqDWgbfw4D689/8EGhHG4465h7eivTI237u1aBx4iJvgI6WfgdUE61+coAvMjUkEvOWbpA==}
@@ -1506,6 +1517,12 @@ packages:
 
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
+
+  starlight-package-managers@0.11.1:
+    resolution: {integrity: sha512-GDGJAozmBvmo8CVrOTnYTtnFO1C0kvMPorQ7CF9Khqt2O5mdRtE9JFj+MYh8hU78TdacXFGlJNJDMfHFl7jxiw==}
+    engines: {node: '>=18.17.1'}
+    peerDependencies:
+      '@astrojs/starlight': '>=0.22.0'
 
   starlight-theme-black@0.6.0:
     resolution: {integrity: sha512-SoYAlyFEyRizcxQXd1ibfAGytmI5gVbSBReK25YFeASI51YwdB9bQtmp14/d70KgfD6kD7SRidhOrPBMD4S3AA==}
@@ -2380,6 +2397,10 @@ snapshots:
     dependencies:
       astro: 5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3)
       rehype-expressive-code: 0.41.3
+
+  astro-lazy-youtube-embed@0.5.4(astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3)):
+    dependencies:
+      astro: 5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3)
 
   astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3):
     dependencies:
@@ -3839,6 +3860,10 @@ snapshots:
   source-map@0.7.6: {}
 
   space-separated-tokens@2.0.2: {}
+
+  starlight-package-managers@0.11.1(@astrojs/starlight@0.36.1(astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3))):
+    dependencies:
+      '@astrojs/starlight': 0.36.1(astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3))
 
   starlight-theme-black@0.6.0(@astrojs/starlight@0.36.1(astro@5.14.6(@types/node@24.8.1)(rollup@4.52.5)(typescript@5.9.3))):
     dependencies:

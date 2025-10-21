@@ -101,35 +101,68 @@ const formatFullDate = (date: Date) => {
 
   .posts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 0;
+    grid-template-columns: repeat(3, 1fr);
     border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
   }
 
   /* Featured post takes up more space */
   .post-card.featured {
-    grid-column: span 2;
+    grid-column: span 3;
   }
 
   .post-card {
     background-color: var(--color-bg);
     overflow: hidden;
     transition: background-color 0.2s ease;
-    border-left: 1px solid var(--color-border);
-    border-top: 1px solid var(--color-border);
+    position: relative;
   }
 
-  /* First card (featured) - no top border since grid has one */
-  .post-card:first-child {
-    border-top: none;
+  /* Add borders as pseudo-elements to have more control */
+  .post-card::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--color-border);
   }
 
-  /* First column cards - no left border since grid has one */
-  .post-card:nth-child(odd) {
-    border-left: none;
+  .post-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: var(--color-border);
   }
 
-  /* Second column cards keep their left border to divide columns */
+  /* Featured card spans all columns - no right border */
+  .post-card.featured::after {
+    display: none;
+  }
+
+  /* Remove right border from every 3rd card starting from card 2 (after featured)
+     Card 1: featured (no border needed, spans all)
+     Card 2: column 1 (needs right border)
+     Card 3: column 2 (needs right border)
+     Card 4: column 3 (NO right border) - this is 3n+1 pattern starting from card 2
+     Card 5: column 1 (needs right border)
+     Card 6: column 2 (needs right border)
+     Card 7: column 3 (NO right border)
+  */
+  .post-card:nth-child(3n+4)::after,
+  .post-card:nth-child(3n+1):first-child::after {
+    display: none;
+  }
+
+  /* Remove bottom border from cards in last row - handled by JS class */
+  .post-card.last-row::before {
+    display: none;
+  }
 
   .post-card:hover {
     background-color: hsl(0, 0%, 97%);
@@ -266,11 +299,20 @@ const formatFullDate = (date: Date) => {
   /* Responsive adjustments */
   @media (max-width: 1024px) {
     .posts-grid {
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .post-card.featured {
-      grid-column: span 1;
+      grid-column: span 2;
+    }
+
+    /* Remove right border from every 2nd card in 2-column layout */
+    .post-card:nth-child(3n)::after {
+      display: block;
+    }
+
+    .post-card:nth-child(2n)::after {
+      display: none;
     }
 
     .post-card.featured .post-link {
@@ -288,6 +330,16 @@ const formatFullDate = (date: Date) => {
 
     .post-card.featured .post-description {
       font-size: 0.9375rem;
+    }
+
+    /* Adjust bottom borders for 2-column layout */
+    .post-card:nth-last-child(3)::before {
+      display: block;
+    }
+
+    .post-card:nth-last-child(1)::before,
+    .post-card:nth-last-child(2)::before {
+      display: none;
     }
   }
 
@@ -391,6 +443,33 @@ const formatFullDate = (date: Date) => {
   const showMoreBtn = document.getElementById('showMoreBtn');
   const allCards = document.querySelectorAll('.post-card');
 
+  // Function to update last-row classes based on visible cards
+  function updateLastRowClasses() {
+    // Remove all existing last-row classes
+    allCards.forEach(card => card.classList.remove('last-row'));
+
+    // Get visible cards
+    const visibleCards = Array.from(allCards).filter((card, index) => index < visibleCount);
+
+    if (visibleCards.length === 0) return;
+
+    // Featured card is always first, so we have 3 columns after it
+    // Calculate how many cards are in the last row
+    const cardsAfterFeatured = visibleCards.length - 1; // -1 for featured card
+    const cardsInLastRow = cardsAfterFeatured % 3 || 3; // If 0, means full row of 3
+
+    // Add last-row class to the last row of visible cards
+    for (let i = 0; i < cardsInLastRow; i++) {
+      const cardIndex = visibleCards.length - 1 - i;
+      if (cardIndex >= 0) {
+        visibleCards[cardIndex].classList.add('last-row');
+      }
+    }
+  }
+
+  // Initial update
+  updateLastRowClasses();
+
   if (showMoreBtn) {
     showMoreBtn.addEventListener('click', () => {
       const previousCount = visibleCount;
@@ -408,6 +487,9 @@ const formatFullDate = (date: Date) => {
           }, { once: true });
         }
       });
+
+      // Update last-row classes after showing more cards
+      updateLastRowClasses();
 
       // Hide button if all posts are visible
       if (visibleCount >= allCards.length) {
