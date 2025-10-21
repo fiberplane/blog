@@ -279,11 +279,133 @@ const formatFullDate = (date: Date) => {
 
   .tag {
     padding: 0.25rem 0.625rem;
-    background-color: var(--color-accent-light);
-    color: var(--color-accent-dark);
     border-radius: 0.25rem;
     font-size: 0.75rem;
     font-weight: 500;
+  }
+
+  /* Tag color variants - light mode */
+  .tag.tag-blue {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+
+  .tag.tag-purple {
+    background-color: #e9d5ff;
+    color: #6b21a8;
+  }
+
+  .tag.tag-green {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+
+  .tag.tag-orange {
+    background-color: #fed7aa;
+    color: #9a3412;
+  }
+
+  .tag.tag-pink {
+    background-color: #fce7f3;
+    color: #9f1239;
+  }
+
+  .tag.tag-cyan {
+    background-color: #cffafe;
+    color: #155e75;
+  }
+
+  .tag.tag-amber {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  .tag.tag-indigo {
+    background-color: #e0e7ff;
+    color: #3730a3;
+  }
+
+  /* Tag color variants - dark mode */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .tag.tag-blue {
+      background-color: #1e3a8a;
+      color: #93c5fd;
+    }
+
+    :root:not([data-theme="light"]) .tag.tag-purple {
+      background-color: #581c87;
+      color: #d8b4fe;
+    }
+
+    :root:not([data-theme="light"]) .tag.tag-green {
+      background-color: #064e3b;
+      color: #6ee7b7;
+    }
+
+    :root:not([data-theme="light"]) .tag.tag-orange {
+      background-color: #7c2d12;
+      color: #fdba74;
+    }
+
+    :root:not([data-theme="light"]) .tag.tag-pink {
+      background-color: #831843;
+      color: #f9a8d4;
+    }
+
+    :root:not([data-theme="light"]) .tag.tag-cyan {
+      background-color: #164e63;
+      color: #67e8f9;
+    }
+
+    :root:not([data-theme="light"]) .tag.tag-amber {
+      background-color: #78350f;
+      color: #fcd34d;
+    }
+
+    :root:not([data-theme="light"]) .tag.tag-indigo {
+      background-color: #312e81;
+      color: #a5b4fc;
+    }
+  }
+
+  :root[data-theme="dark"] .tag.tag-blue {
+    background-color: #1e3a8a;
+    color: #93c5fd;
+  }
+
+  :root[data-theme="dark"] .tag.tag-purple {
+    background-color: #581c87;
+    color: #d8b4fe;
+  }
+
+  :root[data-theme="dark"] .tag.tag-green {
+    background-color: #064e3b;
+    color: #6ee7b7;
+  }
+
+  :root[data-theme="dark"] .tag.tag-orange {
+    background-color: #7c2d12;
+    color: #fdba74;
+  }
+
+  :root[data-theme="dark"] .tag.tag-pink {
+    background-color: #831843;
+    color: #f9a8d4;
+  }
+
+  :root[data-theme="dark"] .tag.tag-cyan {
+    background-color: #164e63;
+    color: #67e8f9;
+  }
+
+  :root[data-theme="dark"] .tag.tag-amber {
+    background-color: #78350f;
+    color: #fcd34d;
+  }
+
+  :root[data-theme="dark"] .tag.tag-indigo {
+    background-color: #312e81;
+    color: #a5b4fc;
   }
 
   .empty-state {
@@ -442,6 +564,32 @@ const formatFullDate = (date: Date) => {
 
   const showMoreBtn = document.getElementById('showMoreBtn');
   const allCards = document.querySelectorAll('.post-card');
+
+  // Tag color assignment - deterministic based on tag name
+  const tagColors = ['blue', 'purple', 'green', 'orange', 'pink', 'cyan', 'amber', 'indigo'];
+
+  function hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  function assignTagColors() {
+    const tags = document.querySelectorAll('.tag');
+    tags.forEach(tag => {
+      const tagText = tag.textContent?.toLowerCase() || '';
+      const colorIndex = hashString(tagText) % tagColors.length;
+      const colorClass = `tag-${tagColors[colorIndex]}`;
+      tag.classList.add(colorClass);
+    });
+  }
+
+  // Assign colors on load
+  assignTagColors();
 
   // Function to update last-row classes based on visible cards
   function updateLastRowClasses() {
