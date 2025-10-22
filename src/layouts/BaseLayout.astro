@@ -92,9 +92,9 @@ const { title, description } = Astro.props;
 
 <script>
   // Theme toggle functionality
-  function getThemePreference() {
+  function getThemePreference(): string {
     if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
-      return localStorage.getItem('theme');
+      return localStorage.getItem('theme') || 'auto';
     }
     return 'auto';
   }

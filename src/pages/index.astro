@@ -597,7 +597,7 @@ const formatFullDate = (date: Date) => {
     allCards.forEach(card => card.classList.remove('last-row'));
 
     // Get visible cards
-    const visibleCards = Array.from(allCards).filter((card, index) => index < visibleCount);
+    const visibleCards = Array.from(allCards).filter((_card, index) => index < visibleCount);
 
     if (visibleCards.length === 0) return;
 

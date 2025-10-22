@@ -7,6 +7,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "check": "astro check",
     "astro": "astro"
   },
   "dependencies": {
@@ -19,5 +20,9 @@
     "sharp": "^0.34.2",
     "starlight-package-managers": "^0.11.1",
     "starlight-theme-black": "^0.6.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.5",
+    "typescript": "^5.9.3"
   }
 }
