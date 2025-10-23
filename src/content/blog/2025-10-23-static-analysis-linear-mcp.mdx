@@ -35,7 +35,7 @@ Here are the key differences:
 
 - **Simplified filtering/querying**: The list tools (`list_issues`, `list_projects`, etc.) provide curated parameter sets rather than exposing Linear's full GraphQL filter capabilities. For example, `list_issues` has specific filters like `teamId`, `stateId`, `assigneeId` rather than the complex nested filter objects GraphQL typically uses.
 - **Convenience methods**: `get_issue_git_branch_name` is a higher-level abstraction that likely extracts just the branch name from an issue, rather than making you fetch the whole issue and parse it.
-- **Non-GraphQL functionality**:  `search_documentation` tool adds Linear's documentation to the MCP server and provides information the GraphQL API doesn't reveal.
+- **Non-GraphQL functionality**: The `search_documentation` tool adds Linear's documentation to the MCP server and provides information that their core API doesn't contain.
 - **Opinionated parameters**: Things like priority being explicitly documented as `0 = No priority, 1 = Urgent...` suggest the MCP server is adding human-friendly documentation on top of what might be more opaque in the raw GraphQL schema.
 
 This is a thoughtfully designed abstraction layer, not just a mechanical mapping. 
