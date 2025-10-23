@@ -20,7 +20,7 @@ Why Linear? In developer communities, Linear consistently comes up as one of the
 
 ## What can be statically analyzed in an MCP Server
 
-Looking at Anthropic's guidance on building agent-friendly tools, we can examine three key aspects through static analysis:
+Taking Anthropic's tips for agent-friendly tools, we can review an MCP server with a few (anti-)patterns in mind:
 
 - **API Endpoints vs. MCP Tools**:  A thoughtful implementation doesn't simply wrap every available endpoint as a separate tool. We should compare the underlying API surface with the MCP tool set: Are all endpoints exposed? Are related operations consolidated? How many tools exist, and is that number optimized for effective context management?
 - **Input Parameter Validation and Error Messages**: Using the MCP Inspector, we can evaluate how the server handles inputs: Are parameters clearly defined? Does the validation provide helpful feedback? Do error messages guide the agent toward correct usage?
