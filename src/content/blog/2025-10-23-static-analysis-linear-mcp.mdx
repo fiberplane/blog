@@ -22,7 +22,7 @@ Why Linear? In developer communities, Linear consistently comes up as one of the
 
 Looking at Anthropic's guidance on building agent-friendly tools, we can examine three key aspects through static analysis:
 
-- **API Endpoints vs. MCP Tools**:  A thoughtful implementation doesn't simply wrap every available REST or GraphQL endpoint as a separate tool. We should compare the underlying API surface with the MCP tool set: Are all endpoints exposed? Are related operations consolidated? How many tools exist, and is that number optimized for effective context management?
+- **API Endpoints vs. MCP Tools**:  A thoughtful implementation doesn't simply wrap every available endpoint as a separate tool. We should compare the underlying API surface with the MCP tool set: Are all endpoints exposed? Are related operations consolidated? How many tools exist, and is that number optimized for effective context management?
 - **Input Parameter Validation and Error Messages**: Using the MCP Inspector, we can evaluate how the server handles inputs: Are parameters clearly defined? Does the validation provide helpful feedback? Do error messages guide the agent toward correct usage?
 - **Output Structure and Signal Quality**: We can examine what the server returns: Is the output format consistent and well-structured? Does it contain high-signal information that agents can actually use, or is it cluttered with noise?
 
