@@ -4,9 +4,7 @@ import { defineConfig } from "astro/config";
 
 export default defineConfig({
   site: "https://blog.fiberplane.com",
-  build: {
-    format: "file",
-  },
+  trailingSlash: "always",
   integrations: [starlight({ title: "Fiberplane Blog" })],
   markdown: {
     shikiConfig: {

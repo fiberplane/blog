@@ -37,7 +37,7 @@ const formatFullDate = (date: Date) => {
     <div class="posts-grid">
       {publishedPosts.map((post, index) => (
         <article class:list={['post-card', { 'featured': index === 0 }, { 'hidden': index >= 6 }]} data-index={index}>
-          <a href={`/blog/${post.id}`} class="post-link">
+          <a href={`/blog/${post.id}/`} class="post-link">
             {post.data.image && (
               <div class="post-image">
                 <img src={post.data.image} alt={post.data.title} loading="lazy" />
