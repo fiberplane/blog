@@ -1,8 +1,8 @@
 ---
-import { getCollection } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
 
-const allPosts = await getCollection('blog');
+const allPosts = await getCollection("blog");
 
 // Filter out drafts and sort by date (newest first)
 const publishedPosts = allPosts
@@ -10,17 +10,17 @@ const publishedPosts = allPosts
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
   }).format(date);
 };
 
 const formatFullDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   }).format(date);
 };
 ---
@@ -35,48 +35,68 @@ const formatFullDate = (date: Date) => {
     </header>
 
     <div class="posts-grid">
-      {publishedPosts.map((post, index) => (
-        <article class:list={['post-card', { 'featured': index === 0 }, { 'hidden': index >= 6 }]} data-index={index}>
-          <a href={`/blog/${post.id}/`} class="post-link">
-            {post.data.image && (
-              <div class="post-image">
-                <img src={post.data.image} alt={post.data.title} loading="lazy" />
-              </div>
-            )}
-            <div class="post-content">
-              <div class="post-meta">
-                <time datetime={post.data.pubDate.toISOString()} title={formatFullDate(post.data.pubDate)}>
-                  {formatDate(post.data.pubDate)}
-                </time>
-              </div>
-              <h2>{post.data.title}</h2>
-              <p class="post-description">{post.data.description}</p>
-              {post.data.tags.length > 0 && (
-                <div class="tags">
-                  {post.data.tags.map((tag) => (
-                    <span class="tag">{tag}</span>
-                  ))}
+      {
+        publishedPosts.map((post, index) => (
+          <article
+            class:list={[
+              "post-card",
+              { featured: index === 0 },
+              { hidden: index >= 6 },
+            ]}
+            data-index={index}
+          >
+            <a href={`/blog/${post.id}/`} class="post-link">
+              {post.data.image && (
+                <div class="post-image">
+                  <img
+                    src={post.data.image}
+                    alt={post.data.title}
+                    loading="lazy"
+                  />
                 </div>
               )}
-            </div>
-          </a>
-        </article>
-      ))}
+              <div class="post-content">
+                <div class="post-meta">
+                  <time
+                    datetime={post.data.pubDate.toISOString()}
+                    title={formatFullDate(post.data.pubDate)}
+                  >
+                    {formatDate(post.data.pubDate)}
+                  </time>
+                </div>
+                <h2>{post.data.title}</h2>
+                <p class="post-description">{post.data.description}</p>
+                {post.data.tags.length > 0 && (
+                  <div class="tags">
+                    {post.data.tags.map((tag) => (
+                      <span class="tag">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </a>
+          </article>
+        ))
+      }
     </div>
 
-    {publishedPosts.length > 6 && (
-      <div class="show-more-container">
-        <button class="show-more-button" id="showMoreBtn">
-          Show more posts
-        </button>
-      </div>
-    )}
+    {
+      publishedPosts.length > 6 && (
+        <div class="show-more-container">
+          <button class="show-more-button" id="showMoreBtn">
+            Show more posts
+          </button>
+        </div>
+      )
+    }
 
-    {publishedPosts.length === 0 && (
-      <div class="empty-state">
-        <p>No posts published yet. Check back soon!</p>
-      </div>
-    )}
+    {
+      publishedPosts.length === 0 && (
+        <div class="empty-state">
+          <p>No posts published yet. Check back soon!</p>
+        </div>
+      )
+    }
   </div>
 </BaseLayout>
 
@@ -100,16 +120,22 @@ const formatFullDate = (date: Date) => {
   }
 
   .posts-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
     border: 1px solid var(--color-border);
     border-radius: 0.75rem;
     overflow: hidden;
   }
 
-  /* Featured post takes up more space */
-  .post-card.featured {
-    grid-column: span 3;
+  /* Apply grid layout only above 768px */
+  @media (width > 768px) {
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Featured post takes up more space */
+    .post-card.featured {
+      grid-column: span 3;
+    }
   }
 
   .post-card {
@@ -121,7 +147,7 @@ const formatFullDate = (date: Date) => {
 
   /* Add borders as pseudo-elements to have more control */
   .post-card::after {
-    content: '';
+    content: "";
     position: absolute;
     right: 0;
     top: 0;
@@ -131,7 +157,7 @@ const formatFullDate = (date: Date) => {
   }
 
   .post-card::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     right: 0;
@@ -154,8 +180,8 @@ const formatFullDate = (date: Date) => {
      Card 6: column 2 (needs right border)
      Card 7: column 3 (NO right border)
   */
-  .post-card:nth-child(3n+4)::after,
-  .post-card:nth-child(3n+1):first-child::after {
+  .post-card:nth-child(3n + 4)::after,
+  .post-card:nth-child(3n + 1):first-child::after {
     display: none;
   }
 
@@ -428,12 +454,17 @@ const formatFullDate = (date: Date) => {
       grid-column: span 2;
     }
 
-    /* Remove right border from every 2nd card in 2-column layout */
-    .post-card:nth-child(3n)::after {
+    /* In 2-column layout after featured card:
+       - Cards 2,4,6,8... are in left column (need right border)
+       - Cards 3,5,7,9... are in right column (no right border) */
+    
+    /* First, reset desktop 3-column rules and show borders on left column */
+    .post-card:nth-child(2n+2)::after {
       display: block;
     }
-
-    .post-card:nth-child(2n)::after {
+    
+    /* Then hide borders on right column */
+    .post-card:nth-child(2n+3)::after {
       display: none;
     }
 
@@ -453,16 +484,6 @@ const formatFullDate = (date: Date) => {
     .post-card.featured .post-description {
       font-size: 0.9375rem;
     }
-
-    /* Adjust bottom borders for 2-column layout */
-    .post-card:nth-last-child(3)::before {
-      display: block;
-    }
-
-    .post-card:nth-last-child(1)::before,
-    .post-card:nth-last-child(2)::before {
-      display: none;
-    }
   }
 
   @media (max-width: 768px) {
@@ -480,9 +501,19 @@ const formatFullDate = (date: Date) => {
 
     .posts-grid {
       grid-template-columns: 1fr;
+      align-items: start;
     }
 
-    /* In single column, remove all right borders and only last card has no bottom border */
+    /* In single column, hide all pseudo-element borders and use direct borders instead */
+    .posts-grid .post-card::after,
+    .posts-grid .post-card::before,
+    .posts-grid .post-card.featured::after,
+    .posts-grid .post-card.featured::before,
+    .posts-grid .post-card:nth-child(n)::after,
+    .posts-grid .post-card:nth-child(n)::before {
+      display: none;
+    }
+
     .post-card {
       border-right: none;
       border-bottom: 1px solid var(--color-border);
@@ -538,7 +569,7 @@ const formatFullDate = (date: Date) => {
     border-radius: 9999px;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-family: "Geist Sans", system-ui, sans-serif;
     outline: none;
   }
 
@@ -555,33 +586,41 @@ const formatFullDate = (date: Date) => {
   .show-more-button:active {
     transform: scale(0.98);
   }
-
 </style>
 
 <script>
   let visibleCount = 6;
   const INCREMENT = 6;
 
-  const showMoreBtn = document.getElementById('showMoreBtn');
-  const allCards = document.querySelectorAll('.post-card');
+  const showMoreBtn = document.getElementById("showMoreBtn");
+  const allCards = document.querySelectorAll(".post-card");
 
   // Tag color assignment - deterministic based on tag name
-  const tagColors = ['blue', 'purple', 'green', 'orange', 'pink', 'cyan', 'amber', 'indigo'];
+  const tagColors = [
+    "blue",
+    "purple",
+    "green",
+    "orange",
+    "pink",
+    "cyan",
+    "amber",
+    "indigo",
+  ];
 
   function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash);
   }
 
   function assignTagColors() {
-    const tags = document.querySelectorAll('.tag');
-    tags.forEach(tag => {
-      const tagText = tag.textContent?.toLowerCase() || '';
+    const tags = document.querySelectorAll(".tag");
+    tags.forEach((tag) => {
+      const tagText = tag.textContent?.toLowerCase() || "";
       const colorIndex = hashString(tagText) % tagColors.length;
       const colorClass = `tag-${tagColors[colorIndex]}`;
       tag.classList.add(colorClass);
@@ -594,23 +633,36 @@ const formatFullDate = (date: Date) => {
   // Function to update last-row classes based on visible cards
   function updateLastRowClasses() {
     // Remove all existing last-row classes
-    allCards.forEach(card => card.classList.remove('last-row'));
+    allCards.forEach((card) => card.classList.remove("last-row"));
 
     // Get visible cards
-    const visibleCards = Array.from(allCards).filter((_card, index) => index < visibleCount);
+    const visibleCards = Array.from(allCards).filter(
+      (_card, index) => index < visibleCount
+    );
 
     if (visibleCards.length === 0) return;
 
-    // Featured card is always first, so we have 3 columns after it
+    // Determine number of columns based on viewport width
+    const width = window.innerWidth;
+    let columns;
+    if (width <= 768) {
+      columns = 1; // Mobile: single column
+    } else if (width <= 1024) {
+      columns = 2; // Tablet: 2 columns
+    } else {
+      columns = 3; // Desktop: 3 columns
+    }
+
+    // Featured card is always first, so we calculate columns after it
     // Calculate how many cards are in the last row
     const cardsAfterFeatured = visibleCards.length - 1; // -1 for featured card
-    const cardsInLastRow = cardsAfterFeatured % 3 || 3; // If 0, means full row of 3
+    const cardsInLastRow = cardsAfterFeatured % columns || columns; // If 0, means full row
 
     // Add last-row class to the last row of visible cards
     for (let i = 0; i < cardsInLastRow; i++) {
       const cardIndex = visibleCards.length - 1 - i;
       if (cardIndex >= 0) {
-        visibleCards[cardIndex].classList.add('last-row');
+        visibleCards[cardIndex].classList.add("last-row");
       }
     }
   }
@@ -618,21 +670,28 @@ const formatFullDate = (date: Date) => {
   // Initial update
   updateLastRowClasses();
 
+  // Update on window resize to handle viewport changes
+  window.addEventListener("resize", updateLastRowClasses);
+
   if (showMoreBtn) {
-    showMoreBtn.addEventListener('click', () => {
+    showMoreBtn.addEventListener("click", () => {
       const previousCount = visibleCount;
       visibleCount += INCREMENT;
 
       allCards.forEach((card, index) => {
         if (index >= previousCount && index < visibleCount) {
           // Remove hidden class and add fade-in animation
-          card.classList.remove('hidden');
-          card.classList.add('fade-in');
+          card.classList.remove("hidden");
+          card.classList.add("fade-in");
 
           // Remove fade-in class after animation completes so it can be reused
-          card.addEventListener('animationend', () => {
-            card.classList.remove('fade-in');
-          }, { once: true });
+          card.addEventListener(
+            "animationend",
+            () => {
+              card.classList.remove("fade-in");
+            },
+            { once: true }
+          );
         }
       });
 
@@ -641,7 +700,7 @@ const formatFullDate = (date: Date) => {
 
       // Hide button if all posts are visible
       if (visibleCount >= allCards.length) {
-        showMoreBtn.style.display = 'none';
+        showMoreBtn.style.display = "none";
       }
     });
   }
