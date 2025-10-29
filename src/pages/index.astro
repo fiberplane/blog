@@ -454,12 +454,17 @@ const formatFullDate = (date: Date) => {
       grid-column: span 2;
     }
 
-    /* Remove right border from every 2nd card in 2-column layout */
-    .post-card:nth-child(3n)::after {
+    /* In 2-column layout after featured card:
+       - Cards 2,4,6,8... are in left column (need right border)
+       - Cards 3,5,7,9... are in right column (no right border) */
+    
+    /* First, reset desktop 3-column rules and show borders on left column */
+    .post-card:nth-child(2n+2)::after {
       display: block;
     }
-
-    .post-card:nth-child(2n)::after {
+    
+    /* Then hide borders on right column */
+    .post-card:nth-child(2n+3)::after {
       display: none;
     }
 
@@ -478,16 +483,6 @@ const formatFullDate = (date: Date) => {
 
     .post-card.featured .post-description {
       font-size: 0.9375rem;
-    }
-
-    /* Adjust bottom borders for 2-column layout */
-    .post-card:nth-last-child(3)::before {
-      display: block;
-    }
-
-    .post-card:nth-last-child(1)::before,
-    .post-card:nth-last-child(2)::before {
-      display: none;
     }
   }
 
@@ -647,10 +642,21 @@ const formatFullDate = (date: Date) => {
 
     if (visibleCards.length === 0) return;
 
-    // Featured card is always first, so we have 3 columns after it
+    // Determine number of columns based on viewport width
+    const width = window.innerWidth;
+    let columns;
+    if (width <= 768) {
+      columns = 1; // Mobile: single column
+    } else if (width <= 1024) {
+      columns = 2; // Tablet: 2 columns
+    } else {
+      columns = 3; // Desktop: 3 columns
+    }
+
+    // Featured card is always first, so we calculate columns after it
     // Calculate how many cards are in the last row
     const cardsAfterFeatured = visibleCards.length - 1; // -1 for featured card
-    const cardsInLastRow = cardsAfterFeatured % 3 || 3; // If 0, means full row of 3
+    const cardsInLastRow = cardsAfterFeatured % columns || columns; // If 0, means full row
 
     // Add last-row class to the last row of visible cards
     for (let i = 0; i < cardsInLastRow; i++) {
@@ -663,6 +669,9 @@ const formatFullDate = (date: Date) => {
 
   // Initial update
   updateLastRowClasses();
+
+  // Update on window resize to handle viewport changes
+  window.addEventListener("resize", updateLastRowClasses);
 
   if (showMoreBtn) {
     showMoreBtn.addEventListener("click", () => {
