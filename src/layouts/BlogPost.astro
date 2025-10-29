@@ -41,10 +41,19 @@ const formattedUpdatedDate = updatedDate
         <span class="author">by {author}</span>
       </div>
       {tags.length > 0 && (
-        <div class="tags">
-          {tags.map((tag) => (
-            <span class="tag">{tag}</span>
-          ))}
+        <div class="tags-with-copy">
+          <div class="tags">
+            {tags.map((tag) => (
+              <span class="tag">{tag}</span>
+            ))}
+          </div>
+          <button class="copy-url-btn" id="copy-url-btn" title="Copy URL to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13.5 2C13.5 1.44772 13.0523 1 12.5 1H6C4.89543 1 4 1.89543 4 3V16C4 17.1046 4.89543 18 6 18H7.5C8.05228 18 8.5 17.5523 8.5 17C8.5 16.4477 8.05228 16 7.5 16H6.5C6.22386 16 6 15.7761 6 15.5V3.5C6 3.22386 6.22386 3 6.5 3H12C12.2761 3 12.5 3.22386 12.5 3.5V5C12.5 5.55228 12.9477 6 13.5 6C14.0523 6 14.5 5.55228 14.5 5V2Z" fill="currentColor"/>
+              <path d="M8 7C8 5.89543 8.89543 5 10 5H18C19.1046 5 20 5.89543 20 7V21C20 22.1046 19.1046 23 18 23H10C8.89543 23 8 22.1046 8 21V7Z" fill="currentColor"/>
+            </svg>
+            Copy URL
+          </button>
         </div>
       )}
     </header>
@@ -107,6 +116,13 @@ const formattedUpdatedDate = updatedDate
     color: var(--color-text-secondary);
   }
 
+  .tags-with-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+
   .tags {
     display: flex;
     flex-wrap: wrap;
@@ -114,12 +130,43 @@ const formattedUpdatedDate = updatedDate
     justify-content: center;
   }
 
+  .copy-url-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+
+  .copy-url-btn:hover {
+    color: var(--color-accent-dark);
+    background-color: var(--color-accent-light);
+  }
+
+  .copy-url-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .copy-url-btn.copied {
+    color: #10b981;
+  }
+
   .tag {
     padding: 0.375rem 0.875rem;
     border-radius: 9999px;
     font-size: 0.8125rem;
     font-weight: 500;
-    text-transform: capitalize;
+    text-transform: lowercase;
     letter-spacing: 0;
     border: none;
   }
@@ -402,4 +449,33 @@ const formattedUpdatedDate = updatedDate
 
   // Assign colors on load
   assignTagColors();
+
+  // Copy URL functionality
+  const copyUrlBtn = document.getElementById('copy-url-btn');
+  if (copyUrlBtn) {
+    copyUrlBtn.addEventListener('click', async () => {
+      try {
+        const url = window.location.href;
+        await navigator.clipboard.writeText(url);
+
+        // Visual feedback
+        const originalText = copyUrlBtn.innerHTML;
+        copyUrlBtn.classList.add('copied');
+        copyUrlBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Copied!
+        `;
+
+        // Reset after 2 seconds
+        setTimeout(() => {
+          copyUrlBtn.classList.remove('copied');
+          copyUrlBtn.innerHTML = originalText;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy URL:', err);
+      }
+    });
+  }
 </script>
