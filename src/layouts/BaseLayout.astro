@@ -292,6 +292,9 @@ const { title, description } = Astro.props;
     });
   }
 
+  // Initialize on first page load
+  initMobileMenu();
+
   // Reinitialize on Astro page navigation
   document.addEventListener("astro:page-load", initMobileMenu);
 </script>
