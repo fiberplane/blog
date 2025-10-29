@@ -1,10 +1,10 @@
 # Fiberplane Blog
 
-The official engineering blog for [Fiberplane](https://fiberplane.com), covering topics around observability, developer tools, MCP (Model Context Protocol), TypeScript, Rust, and our journey building collaborative debugging tools.
+The official engineering blog for [Fiberplane](https://fiberplane.com), covering topics around observability, developer tools, MCP (Model Context Protocol), and TypeScript.
 
 ## 🚀 Project Structure
 
-This is an Astro-based blog with a clean, Vercel-inspired design. Here's the project structure:
+This is an Astro-based blog with a clean design. Here's the project structure:
 
 ```
 .
