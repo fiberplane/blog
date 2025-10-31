@@ -103,9 +103,6 @@ deno_version = 2
 Start your development environment:
 
 ```shell
-# Initialize Supabase (if not already done)
-supabase init
-
 # Start Supabase services
 supabase start
 
@@ -113,7 +110,7 @@ supabase start
 supabase functions serve --no-verify-jwt mcp-server
 ```
 
-Or use the npm scripts:
+For convenience, the template has a `dev` script, which just runs the `supabase functions serve` command from above:
 
 ```shell
 npm run dev
