@@ -48,7 +48,7 @@ Consider a typical agent workflow: A developer asks their AI assistant to "creat
 3. Use `list_issue_labels` to find the "bug" label
 4. Call `create_issue` with the gathered IDs
 
-Or when a developer asks "what are the open issues assigned to me?", the agent would:
+Or when a time-pressed developer asks "what are the lowest effort open issues assigned to me?", the agent would:
 1. Call `list_issues` with assignee set to "me" (the server accepts "me" as a value)
 2. Filter by the desired state
 
