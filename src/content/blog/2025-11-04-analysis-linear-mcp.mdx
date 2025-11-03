@@ -111,7 +111,7 @@ Different agents handle context differently—some may have larger windows, othe
 This makes the case for the design choices we see in Linear's MCP server: consolidating related operations, flattening nested parameters, and providing only the most essential tools rather than exposing the entire API surface.
 
 
-## MCP Server Input Parameter Validation and Error Messages
+## Input Parameter Validation and Error Messages
 The Linear MCP server provides helpful validation feedback. For non-required fields, validation is strict and informative. Pagination cursors (`before` and `after`) must be valid UUIDs, and color codes require proper hexadecimal format:
 
 ```json
