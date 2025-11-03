@@ -2,12 +2,13 @@
 title: "Review Linear's MCP Server"
 description: "An analysis of Linear's MCP server reveals practical insights for building agent-friendly tools, from API design to output format optimization."
 slug: mcp-server-analysis-linear
-date: 2025-10-30
+date: 2025-11-04
 author: Nele Uhlemann
 tags:
   - mcp
   - context management
 ---
+import PackageManagers from "@/components/PackageManagers.astro";
 
 When agents interact with external tools, two factors become critical: context management and token efficiency. 
 As Anthropic emphasized in the post [Writing Effective Tools](https://www.anthropic.com/engineering/writing-tools-for-agents), building an effective toolset for an agent requires thinking like an agent. 
@@ -87,6 +88,27 @@ This flattening reduces the cognitive load for agents. Fewer nested structures m
 
 This is a thoughtfully designed abstraction layer, not just a mechanical mapping. 
 It's making Linear easier to use programmatically by providing task-oriented tools rather than schema-oriented access.
+
+### Context cost of tool definitions in practice
+The MCP server's 23 tools come with a tangible context cost.
+To measure the context cost, we can add Linear's MCP server to Claude Code and inspect the `/context` command, which reveals how tokens are allocated.
+![img claude context without MCP server](@/assets/blog/2025-11-04-Context-Without_MCP.png)
+
+The image above shows the context usage without the MCP Server added. Let's add the mcp server and inspect the conext again: 
+
+![img claude context with MCP server](@/assets/blog/2025-11-04-Context_with_MCP_Server.png)
+
+Adding the Linear MCP server increases context usage from 61k to 78k tokens (30% to 39% of the 200k budget), with the tool definitions themselves consuming 17.3k tokens (8.6%). 
+This overhead is the price of having 23 well-documented functions available—each with parameter descriptions, validation rules, and usage examples.
+
+
+This highlights an important trade-off in MCP server design: comprehensive tooling provides flexibility but consumes context budget. 
+The 17.3k token investment for Linear's tools is reasonable given the functionality, but it underscores why thoughtful API consolidation matters. 
+Every additional tool definition adds to this baseline cost before any actual work begins.
+
+Different agents handle context differently—some may have larger windows, others more aggressive compression strategies—but the fundamental principle remains: tool definitions are not free. 
+This makes the case for the design choices we see in Linear's MCP server: consolidating related operations, flattening nested parameters, and providing only the most essential tools rather than exposing the entire API surface.
+
 
 ## MCP Server Input Parameter Validation and Error Messages
 The Linear MCP server provides helpful validation feedback. For non-required fields, validation is strict and informative. Pagination cursors (`before` and `after`) must be valid UUIDs, and color codes require proper hexadecimal format:
