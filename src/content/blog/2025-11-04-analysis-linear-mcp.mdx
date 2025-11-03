@@ -57,7 +57,7 @@ These workflows demonstrate how the MCP server's tools are designed for task com
 
 ## API Endpoints and MCP Tools
 Linear has a [GraphQL API](https://studio.apollographql.com/public/Linear-API/variant/current/schema/reference). 
-Comparing Linear's GraphQL API and Linear's MCP server, the MCP server is doing more than just a simple 1:1 mapping of the GraphQL schema. 
+Comparing Linear's GraphQL API and Linear's MCP server, the MCP server is doing more than just a simple 1:1 mapping to the GraphQL schemas. 
 Here are the key differences:
 
 - **Simplified filtering/querying**: The list tools (`list_issues`, `list_projects`, etc.) provide curated parameter sets rather than exposing Linear's full GraphQL filter capabilities. For example, `list_issues` has specific filters like `teamId`, `stateId`, `assigneeId` rather than the complex nested filter objects GraphQL typically uses.
