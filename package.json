@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+  "name": "blog",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -11,6 +11,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.6.10",
     "@astrojs/starlight": "^0.36.1",
     "@fontsource/geist-mono": "^5.2.7",
     "@fontsource/geist-sans": "^5.2.5",
@@ -22,6 +23,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.5",
-    "typescript": "^5.9.3"
-  }
+    "typescript": "^5.9.3",
+    "wrangler": "^4.45.3"
+  },
+  "packageManager": "pnpm@10.20.0"
 }
