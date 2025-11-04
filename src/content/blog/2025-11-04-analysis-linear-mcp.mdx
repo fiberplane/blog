@@ -3,7 +3,7 @@ title: "Review Linear's MCP Server"
 description: "An analysis of Linear's MCP server reveals practical insights for building agent-friendly tools, from API design to output format optimization."
 slug: mcp-server-analysis-linear
 date: 2025-11-04
-author: Nele Uhlemann
+author: Brett Beutell & Nele Uhlemann
 tags:
   - mcp
   - context management
@@ -13,7 +13,7 @@ import PackageManagers from "@/components/PackageManagers.astro";
 Access to tools is what turns an LLM into an agent. But loading too many tools into context can turn an agent into an expensive slop machine.
 As Anthropic emphasized in the post [Writing Effective Tools](https://www.anthropic.com/engineering/writing-tools-for-agents), building an effective toolset for an agent requires thinking like an agent. 
 
-While testing MCP servers with agents and improving them through agents is inevitable, there's valuable insight to be gained from a *human* review. 
+While testing MCP servers with agents and improving them through agents is inevitable, there are valuable insights to be gained from a *human* review. 
 This post takes a manual approach to examining the [Linear MCP server](https://linear.app/docs/mcp), exploring what we can learn just by looking at its structure, tool definitions, and design choices. 
 Of course, for comprehensive evaluation, running this server with an actual agent is essential, but even before that step, certain patterns emerge.
 
@@ -60,7 +60,8 @@ Linear has a [GraphQL API](https://studio.apollographql.com/public/Linear-API/va
 Comparing Linear's GraphQL API and Linear's MCP server, the MCP server is doing more than just a simple 1:1 mapping to the GraphQL schemas. 
 Here are the key differences:
 
-- **Simplified filtering/querying**: The list tools (`list_issues`, `list_projects`, etc.) provide curated parameter sets rather than exposing Linear's full GraphQL filter capabilities. For example, `list_issues` has specific filters like `teamId`, `stateId`, `assigneeId` rather than the complex nested filter objects GraphQL typically uses.
+### Simplified filtering/querying 
+The list tools (`list_issues`, `list_projects`, etc.) provide curated parameter sets rather than exposing Linear's full GraphQL filter capabilities. For example, `list_issues` has specific filters like `teamId`, `stateId`, `assigneeId` rather than the complex nested filter objects GraphQL typically uses.
 
 For instance, filtering issues by assignee in the GraphQL API requires a nested filter object:
 ```graphql
@@ -84,18 +85,21 @@ The MCP server simplifies this to a flat parameter:
 ```
 
 This flattening reduces the cognitive load for agents. Fewer nested structures mean fewer tokens and clearer parameter requirements.
-- **Knowledge tools**: The `search_documentation` tool adds Linear's documentation to the MCP server and provides information that their core API doesn't contain.
-- **Explicit value mappings**: The MCP server documents parameter values directly in tool descriptions. For example, priority is explicitly defined as `0 = No priority, 1 = Urgent, 2 = High, 3 = Normal, 4 = Low`, making these mappings immediately clear to agents without requiring external documentation lookups.
+### Knowledge tools
+The `search_documentation` tool adds Linear's documentation to the MCP server and provides information that their core API doesn't contain.
+
+### Explicit value mappings 
+The MCP server documents parameter values directly in tool descriptions. For example, priority is explicitly defined as `0 = No priority, 1 = Urgent, 2 = High, 3 = Normal, 4 = Low`, making these mappings immediately clear to agents without requiring external documentation lookups.
 
 This is a thoughtfully designed abstraction layer, not just a mechanical mapping. 
 It makes Linear easier to use by providing task-oriented tools rather than schema-oriented access.
 
-### Context cost of tool definitions in practice
+## Context cost of tool definitions in practice
 The MCP server's 23 tools come with a tangible context cost.
 To measure the context cost, we can add Linear's MCP server to Claude Code and inspect the `/context` command, which reveals how tokens are allocated.
 ![img claude context without MCP server](@/assets/blog/2025-11-04-Context-Without_MCP.png)
 
-The image above shows the context usage without the MCP Server added. Let's add the mcp server and inspect the conext again: 
+The image above shows the context usage without the MCP Server added. Let's add the MCP server and inspect the context again: 
 
 ![img claude context with MCP server](@/assets/blog/2025-11-04-Context_with_MCP_Server.png)
 
@@ -128,11 +132,11 @@ The Linear MCP server provides helpful validation feedback. For non-required fie
 For required fields like entity IDs, malformed values return clear messages like `"Entity not found: Project"` (though this doesn't distinguish between validation failures and genuinely missing entities). The error messages provide agents with enough context to quickly identify and resolve issues.
 
 ## MCP Server Output
-When it comes to server output, there are two aspects worth examining:
+When it comes to server output, there are two aspects worth examining. While Linear's MCP server demonstrates thoughtful design in many areas, the output structure presents opportunities for improvement that could meaningfully reduce token costs and improve context efficiency.
 
 ### High Signal Information
 Responses like `list_users` return comprehensive fields including `createdAt`, `updatedAt`, `avatarUrl`, `isAdmin`, `isGuest`, and detailed status information. When an agent simply wants to assign an issue to a user, fields like avatar URLs and timestamps add noise rather than value. 
-Additionally, implementing a [ResponseFormat enum](https://modelcontextprotocol.info/docs/tutorials/writing-effective-tools/#returning-meaningful-context-from-your-tools) could control verbosity. It offers both concise and detailed response modes depending on the use case.
+Additionally, implementing a [ResponseFormat enum](https://modelcontextprotocol.info/docs/tutorials/writing-effective-tools/#returning-meaningful-context-from-your-tools) could control verbosity, offering both concise and detailed response modes depending on the use case.
 
 ### Output Format
 The Linear MCP server returns data wrapped in a nested structure where the actual content is stringified JSON inside a `"text"` field:
@@ -153,26 +157,32 @@ The Linear MCP server returns data wrapped in a nested structure where the actua
 }
 ```
 From the model's perspective, this means it doesn't see structured JSON; it sees a string of escaped characters, such as `\"id\":\"123\"`, rather than `{ "id": "123" }`.
-The model must therefore implicitly “unescape” and interpret this data token by token, which increases parsing complexity and context cost. 
+The model must therefore implicitly "unescape" and interpret this data token by token, which increases parsing complexity and context cost. 
 For large or repetitive responses like `list_users` or `list_issue_labels` this stringified format can significantly inflate token usage and degrade reasoning performance.
 
 Studies such as [Wang et al. (2025)](https://arxiv.org/pdf/2505.13478) compare text-serialization formats in terms of computational and representational efficiency across systems.
 It’s not surprising that LLM-focused research and practical experiments reach the same conclusion — more compact, regular formats like CSV or TSV tend to be both cheaper in tokens and easier for models to interpret than deeply nested or stringified JSON.
-This pattern is echoed in applied analyses such as [Axiom’s MCP efficiency research](https://axiom.co/blog/designing-mcp-servers-for-wide-events), and [David Gilbertson’s token-cost comparison](https://david-gilbertson.medium.com/llm-output-formats-why-json-costs-more-than-tsv-ebaf590bd541).
+This pattern is echoed in applied analyses such as [Axiom's MCP efficiency research](https://axiom.co/blog/designing-mcp-servers-for-wide-events), and [David Gilbertson's token-cost comparison](https://david-gilbertson.medium.com/llm-output-formats-why-json-costs-more-than-tsv-ebaf590bd541).
 
-Since Linear operations often return lists of structured entities (for example, users: id / name / email, or labels: name / color / description), adopting a CSV format could meaningfully improve context efficiency.
+Since Linear operations often return lists of structured entities (for example, users: id / name / email, or labels: name / color / description), there are two distinct approaches to improve context efficiency:
+
+1. **Structured Content**: The MCP specification provides a [structured content](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#structured-content) feature that allows servers to return native data structures instead of stringified JSON. This would eliminate serialization overhead entirely by providing models with actual structured data rather than escaped strings. The current Linear implementation does not use this approach.
+
+2. **Compact Text Formats**: For servers that return text-based responses, adopting more compact formats like CSV or TSV can meaningfully reduce token costs compared to deeply nested JSON.
+Linear's operations return lists of structured entities such as `users: id/ name/ email`, or `labels: name/ color/ description`, making tabular formats like CSV relevant for this use case.
 
 #### Client side: Model dependent format handling
-While compact formats like CSV tend to be efficient across the board, different language models vary in how reliably they process structured data.
-Benchmarks such as [StructEval (Yang et al., 2025)](https://arxiv.org/abs/2505.20139)
-and [FOFO (Zhang et al., 2024)](https://arxiv.org/abs/2408.02442)
-evaluate models’ ability to generate and convert structured outputs, revealing that adherence to formats like JSON, XML, and CSV varies significantly across models.
-For instance, GPT-4 typically maintains JSON syntax with high fidelity but can misinterpret heavily escaped or stringified content, whereas Claude 3 models often handle XML- or Markdown-style tags more consistently.
-Together, these findings suggest that format robustness is model-dependent, and that input and output serialization choices can materially affect model reliability.
+When using text-based serialization formats (such as CSV, JSON or XML), different language models vary in how they process these formats. 
+Research on [nested data format comprehension](https://www.improvingagents.com/blog/best-nested-data-format/) shows model-specific preferences:
+YAML performed best for GPT-5 Nano and Gemini 2.5 Flash Lite, while Markdown proved most token-efficient across all tested models (using 34-38% fewer tokens than JSON). 
+For nested data, XML consistently underperformed. However, [research on tabular data formats](https://www.improvingagents.com/blog/best-input-data-format-for-llms) found XML performed well (56.0% accuracy, second only to Markdown key-value pairs), though this was only tested with GPT-4.1-nano.
+According to these two articles, CSV excels for tabular data while Markdown performs best for nested data in terms of token efficiency.
 
-When building MCP servers, we can't control which model the client uses.
-These benchmarks show that models struggle more with complex or deeply nested structured formats than with simpler table- or record-style outputs. 
-Therefore, in practice we should favour a simpler, flatter data representation.
+Format choice affects not only token efficiency but also accuracy. 
+[He et al. (2024)](https://arxiv.org/html/2411.10541v1) found that prompt formatting alone—for example, writing data in Markdown, YAML, or JSON can swing task accuracy by up to 40%, with performance varying significantly by model and task. 
+This underscores how sensitive LLMs are to both data serialization and prompt design.
+
+When building MCP servers, we can't control which model the client uses, so simpler, flatter data representations tend to be the safest choice for broad compatibility.
 
 
 ## Conclusion
@@ -181,7 +191,7 @@ The Linear MCP server demonstrates thoughtful design that goes beyond simple API
 Its abstraction layer over GraphQL provides task-oriented tools with simplified filtering, convenience methods, and human-friendly documentation—making it genuinely useful for agent-driven workflows.
 
 Two areas warrant attention: **high-signal information** and **output structure**. 
-Reducing low-signal data (like avatar URLs when agents just need to assign users) and adopting more token-efficient formats like CSV for large datasets would meaningfully improve context efficiency and reduce token costs.
+Reducing low-signal data (such as avatar URLs when agents only need to assign users) and adopting more token-efficient formats like CSV for large datasets would meaningfully improve context efficiency and reduce token costs.
 
 A manual review offers a practical first step for identifying optimization opportunities. 
 As Anthropic's research has shown, agents interpret responses in remarkably human-like ways. What's clear and efficient for humans often translates well for agents.
