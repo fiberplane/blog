@@ -8,9 +8,12 @@ import "@fontsource/geist-mono/400.css";
 interface Props {
   title: string;
   description: string;
+  ogImage?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, ogImage } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageUrl = ogImage || "/og/index.png";
 ---
 
 <!doctype html>
@@ -32,6 +35,20 @@ const { title, description } = Astro.props;
     />
     <meta name="generator" content={Astro.generator} />
     <title>{title} | Fiberplane Blog</title>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(ogImageUrl, Astro.site)} />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={new URL(ogImageUrl, Astro.site)} />
   </head>
   <body>
     <header class="site-header">
