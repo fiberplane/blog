@@ -4,8 +4,7 @@ import { OGImageRoute } from "astro-og-canvas";
 const pages = {
 	index: {
 		title: "Fiberplane Blog",
-		description:
-			"Insights and updates from the Fiberplane team on developer tools, observability, and collaborative debugging.",
+		description: "Dive into Fiberplane's MCP integrations and developer tools.",
 	},
 };
 
@@ -34,4 +33,3 @@ export const { getStaticPaths, GET } = OGImageRoute({
 		padding: 60,
 	}),
 });
-
