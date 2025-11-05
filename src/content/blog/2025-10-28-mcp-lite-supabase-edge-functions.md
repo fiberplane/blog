@@ -4,6 +4,7 @@ description: "Deploy production-ready MCP servers to Supabase's edge network run
 pubDate: 2025-10-28
 author: "Fiberplane Team"
 tags: ["mcp-lite", "supabase", "edge-functions", "deno", "mcp"]
+slug: "mcp-lite-supabase-edge-functions"
 ---
 
 We're excited to announce that **mcp-lite** now ships with a Supabase Edge Functions starter template. You can now deploy production-ready MCP servers to Supabase's edge network running on Deno.
