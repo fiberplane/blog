@@ -32,6 +32,7 @@ export const { getStaticPaths, GET } = OGImageRoute({
 				size: 48,
 				family: "Geist Sans",
 				weight: "Normal",
+				color: [138, 143, 152],
 			},
 		},
 		fonts: [
