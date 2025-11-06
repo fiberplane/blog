@@ -1,7 +1,6 @@
+import cloudflare from "@astrojs/cloudflare";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
-
-import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
 	site: "https://blog.fiberplane.com",
@@ -13,6 +12,11 @@ export default defineConfig({
 				light: "github-light",
 				dark: "github-dark",
 			},
+		},
+	},
+	vite: {
+		ssr: {
+			external: ["canvaskit-wasm"],
 		},
 	},
 });
