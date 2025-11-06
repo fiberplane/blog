@@ -1,9 +1,9 @@
 ---
-import { getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
+import { getCollection, render } from "astro:content";
+import BlogPost from "../../layouts/BlogPost.astro";
 
 export async function getStaticPaths() {
-  const blogEntries = await getCollection('blog');
+  const blogEntries = await getCollection("blog");
   return blogEntries.map((entry) => ({
     params: { slug: entry.id },
     props: { entry },
@@ -12,6 +12,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
+const ogImagePath = `/og/${entry.id}.png`;
 ---
 
 <BlogPost
@@ -21,6 +22,7 @@ const { Content } = await render(entry);
   updatedDate={entry.data.updatedDate}
   author={entry.data.author}
   tags={entry.data.tags}
+  ogImage={ogImagePath}
 >
   <Content />
 </BlogPost>

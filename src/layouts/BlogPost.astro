@@ -8,9 +8,10 @@ interface Props {
   updatedDate?: Date;
   author: string;
   tags: string[];
+  ogImage?: string;
 }
 
-const { title, description, pubDate, updatedDate, author, tags } = Astro.props;
+const { title, description, pubDate, updatedDate, author, tags, ogImage } = Astro.props;
 
 const formattedPubDate = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -27,7 +28,7 @@ const formattedUpdatedDate = updatedDate
   : undefined;
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} ogImage={ogImage}>
   <article class="blog-post">
     <header class="post-header">
       <h1>{title}</h1>

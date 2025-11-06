@@ -17,6 +17,8 @@
     "@fontsource/geist-sans": "^5.2.5",
     "astro": "^5.15.1",
     "astro-lazy-youtube-embed": "^0.5.4",
+    "astro-og-canvas": "^0.7.2",
+    "canvaskit-wasm": "^0.40.0",
     "sharp": "^0.34.4",
     "starlight-package-managers": "^0.11.1",
     "starlight-theme-black": "^0.6.0"

@@ -23,3 +23,6 @@ pnpm-debug.log*
 
 # agents
 CLAUDE.md
+
+# wrangler
+.wrangler/
