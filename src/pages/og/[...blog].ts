@@ -1,4 +1,5 @@
 import { getCollection } from "astro:content";
+import { join } from "node:path";
 import { OGImageRoute } from "astro-og-canvas";
 
 const blogEntries = await getCollection("blog");
@@ -21,11 +22,25 @@ export const { getStaticPaths, GET } = OGImageRoute({
 		font: {
 			title: {
 				size: 56,
+				family: "Geist Sans",
+				weight: "Bold",
 			},
 			description: {
 				size: 32,
+				family: "Geist Sans",
+				weight: "Normal",
 			},
 		},
-		padding: 60,
+		fonts: [
+			join(
+				process.cwd(),
+				"node_modules/@fontsource/geist-sans/files/geist-sans-latin-400-normal.woff2",
+			),
+			join(
+				process.cwd(),
+				"node_modules/@fontsource/geist-sans/files/geist-sans-latin-700-normal.woff2",
+			),
+		],
+		padding: 80,
 	}),
 });
