@@ -1,0 +1,58 @@
+---
+title: "Introducing MCP Gateway: Debug and Manage MCP Servers in Real Time"
+description: "announcing mcp gateway"
+slug: announcing-mcp-gateway
+date: 2025-12-09
+author: Micha "mies" Hernandez van Leuffen
+tags:
+  - mcp
+  - observability
+  - debugging
+---
+
+# Introducing MCP Gateway: Debug and Manage MCP Servers in Real Time
+
+The Model Context Protocol (MCP) is transforming how AI agents interact with external data and services. But as developers build and integrate multiple MCP servers, a critical challenge emerges: **observability**.
+
+When AI agents make calls to multiple MCP servers, debugging becomes a black box. Which server is responding? What data is being passed? Where's the bottleneck? Without proper instrumentation, these questions require scattered logs and guesswork.
+
+**MCP Gateway** is a unified HTTP proxy that sits between MCP clients and servers, capturing every request and response in real-time. It provides complete visibility into MCP server traffic through a web UI, REST API, and its own MCP server.
+
+## At its core, MCP Gateway gives developers:
+
+**Real-time traffic inspection** — Capture all MCP requests and responses with timing information and token usage
+
+**Multi-server orchestration** — Register and monitor multiple MCP servers (HTTP or stdio-based) from a single dashboard
+
+**Persistent logging** — Store traffic in SQLite for historical analysis and export as JSONL for external tools
+
+**Multiple access patterns** — Interact via web UI, REST API, or through the gateway's own MCP server for programmatic control
+
+**Zero-config setup** — Install globally and start with a single command—servers are proxied automatically
+
+**Dual-mode architecture** — Functions as both an HTTP proxy for MCP servers and an MCP server itself for programmatic management within AI agents
+
+MCP Gateway runs locally on the developer's machine, typically at `http://localhost:3333`. The gateway operates as both a proxy router (capturing traffic at `/s/{serverName}/mcp`) and an MCP server itself (exposing management tools at `/gateway/mcp`).
+
+SCREENCAST
+
+Servers can be added in three ways: through the web UI (demonstrated in the screencast below), via the REST API, or programmatically through the gateway's own MCP server. This flexibility means the gateway can be managed by any MCP client—including Claude—using tools like `add_server()`, `list_servers()`, and `search_records()`.
+
+## Recent capabilities
+
+MCP Gateway supports both HTTP-based and stdio-based (command-line) MCP servers. Stdio servers can be registered via the web UI or directly in the configuration file (`~/.mcp-gateway/mcp.json`), with the gateway managing the process lifecycle—useful when iterating on server implementations.
+
+The web UI provides filtering by server name, session ID, and method for isolating specific interactions. Logs can be exported as JSONL for analysis.
+
+Authentication uses a bearer token auto-generated on startup (or set via `MCP_GATEWAY_TOKEN`). The REST API and web UI require authentication, while proxy endpoints remain unauthenticated—allowing upstream servers to handle their own auth requirements.
+
+## Getting started
+
+```bash
+npm install -g @fiberplane/mcp-gateway
+mcp-gateway
+```
+
+MCP Gateway is open source and ready to try today. Check out the [GitHub repository](https://github.com/fiberplane/mcp-gateway) or read the [documentation](https://docs.fiberplane.com/mcp-gateway) for detailed API references, configuration options, and integration examples.
+
+MCP Gateway joins [MCP Lite](https://github.com/fiberplane/mcp-lite) as part of Fiberplane's suite of MCP developer tools, with more tools coming soon.
