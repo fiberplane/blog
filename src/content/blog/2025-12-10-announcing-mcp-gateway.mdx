@@ -10,6 +10,8 @@ tags:
   - debugging
 ---
 
+import mcpGatewayVideo from "../../assets/blog/2025-12-10-screencast-mcp-gateway.mp4";
+
 # Introducing MCP Gateway: Debug and Manage MCP Servers in Real Time
 
 The Model Context Protocol (MCP) is transforming how AI agents interact with external data and services. But as developers build and integrate multiple MCP servers, a critical challenge emerges: **observability**.
@@ -34,7 +36,10 @@ When AI agents make calls to multiple MCP servers, debugging becomes a black box
 
 MCP Gateway runs locally on the developer's machine, typically at `http://localhost:3333`. The gateway operates as both a proxy router (capturing traffic at `/s/{serverName}/mcp`) and an MCP server itself (exposing management tools at `/gateway/mcp`).
 
-SCREENCAST
+<video controls width="100%" style="max-width: 800px; margin: 2rem auto; display: block;">
+  <source src={mcpGatewayVideo} type="video/mp4" />
+  Your browser doesn't support video playback.
+</video>
 
 Servers can be added in three ways: through the web UI (demonstrated in the screencast below), via the REST API, or programmatically through the gateway's own MCP server. This flexibility means the gateway can be managed by any MCP client—including Claude—using tools like `add_server()`, `list_servers()`, and `search_records()`.
 
