@@ -1,0 +1,80 @@
+---
+title: "Fiberplane Console: Review & Eval MCP Servers"
+description: "Announcing Fiberplane Console - review and run evaluations on your MCP servers"
+slug: announcing-fiberplane-console
+pubDate: 2025-12-16
+author: Brett Beutell
+tags:
+  - mcp
+  - evals
+---
+
+# Introducing Fiberplane Console
+
+When it's time to ship your MCP server, you face two big hurdles:
+
+1. Code review tools know very little about tool definition best practicies.
+2. You have no insight on how well the server is actually performing in clients.
+
+We built the Fiberplane Console to help with both of these problems, so you can put your server out there and know it's doing well by your users.
+
+## Getting Started
+
+Getting started takes less than five minutes. Head to [console.fiberplane.com](https://console.fiberplane.com) and:
+
+- Sign in with GitHub
+- Add an MCP server
+- Kick off a review
+- Write a simple eval
+
+With that, you immediately have a baseline to start improving your server.
+
+## Reviews: Critical Analysis of Tool Definitions
+
+We built a reviewer agent to help catch common mistakes with tool naming, descriptions, and schemas.
+
+Under the hood, the reviewer connects to your MCP server, inspects its tools, and then cross-references the server's tool definitions against a knoweldge base of best practices. The reviewer has access to recent research by frontier labs, as well as tips from companies building with MCP.
+
+At the end of the day, tool definitions are prompts, and developers are left to guess at what the most effective descriptions are to elicit specific agent behavior.
+
+Reviewing tools is not like reviewing API routes: word choice and schema complexity matter greatly, and the reviewer has the expertise to find areas for improvement in your server.
+
+## Evaluations: Test MCP Server Behavior
+
+Evaluation tools typically assume you control the underlying agent in the system you're evaluating. That's what makes evaluating an MCP server so tricky.
+
+MCP Servers are like web apps: they run in different environments (clients), which can affect the UX of the server. You want to catch strange or unwanted behavior from your server _in a specific environemnt_ before a user reports it!
+
+So, we took an MCP-specific approach to evaluations. Today, Fiberplane Console runs eval scenarios for MCP servers inside of an agent harness that mimics Claude Code. In the future, we will support end-to-end environments like Claude Code, ChatGPT, and Cursor. 
+
+Writing and running your first eval takes less than a minute. For example, if you were evaluating an MCP server that tracks someone's work status, you would:
+- Create a scenario
+- Write a seed prompt ("mark me as out of office")
+- Make sure the correct tool was called for that prompt (`set_work_status`).
+
+You can evaluate increasingly complex scenarios, depending on what you want users to do with your server. 
+
+You can even evaluate chains of behavior, and even whether or not the MCP client respects tool guidance to ask clarifying questions.
+
+All of this happens with custom scorers. (Also in the [docs](https://docs.fiberplane.com).)
+
+### Custom Scorers
+
+There are two types of scorers:
+
+- Code-based scorers
+- LLM-as-judge scorers
+
+Code based scorers are good for validating whether a tool call or series of tool calls got executed.
+
+LLM-as judge is best for evaluating complex scenarios where there may be more than one path to success.
+
+We've documented both approaches [in the docs](https://docs.fiberplane.com).
+
+## Start Improving Your MCP Server
+
+The Fiberplane Console is in Open Beta, and we're actively looking for feedback on what would make it a more powerful tool for optimizing MCP servers.
+
+- Discord: ...
+- Console: [console.fiberplane.com](https://console.fiberplane.com)
+- Docs: [docs.fiberplane.com](https://docs.fiberplane.com)
