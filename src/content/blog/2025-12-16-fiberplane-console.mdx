@@ -47,9 +47,10 @@ Evaluation tools typically assume you control the underlying agent in the system
 
 MCP Servers are like web apps: they run in different environments (clients), which can affect the UX of the server. You want to catch strange or unwanted behavior from a client _in a specific environment_ before a user reports it!
 
-So, we took an MCP-specific approach to evaluations. Today, Fiberplane Console runs eval scenarios for MCP servers inside of an agent harness that mimics Claude Code. In the future, we will support end-to-end environments like ChatGPT, VSCode, and Cursor. 
+So, we took an MCP-specific approach to evaluations. Today, Fiberplane Console runs eval scenarios for MCP servers inside of an agent harness that mimics Claude Code. In the future, we will support end-to-end environments like ChatGPT, VSCode, and Cursor.
 
 Writing and running your first eval takes less than a minute. For example, if you were building an MCP server that tracks someone's work status, you would:
+
 - Create a scenario
 - Give it a seed prompt ("mark me as out of office")
 - Make sure the correct tool was called for that prompt (`set_work_status`).
@@ -79,6 +80,6 @@ We've documented both approaches [in the Console docs](https://docs.fiberplane.c
 
 ## Start Improving Your MCP Server
 
-The Fiberplane Console is in Open Beta, and we're actively looking for feedback on what would make it a more powerful tool for optimizing MCP servers. You can reach out on [Twitter](https://x.com/fiberplane).
+The Fiberplane Console is in Open Beta, and we're actively looking for feedback on what would make it a more powerful tool for optimizing MCP servers. You can reach out via email (community@fiberplane.com) or on [Twitter](https://x.com/fiberplane).
 
 With that, go forth and [start iterating on your server](https://console.fiberplane.com).
