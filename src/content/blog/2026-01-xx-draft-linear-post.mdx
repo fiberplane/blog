@@ -10,8 +10,11 @@ tags:
   - context management
 ---
 
+Linear's MCP server has a critical bug making get_issue_status unusable, requires 3 API round trips for basic workflows, and silently ignores invalid inputs.
+Here's what automated Console analysis caught—and what only real integration testing revealed.
+
 In our [previous post](/blog/mcp-server-analysis-linear), we manually reviewed Linear's MCP server.
-Insipired by an Anthropic blogpost about [writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
+Inspired by an Anthropic blogpost about [writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
 we looked at tool definitions, parameter validation, and output structures through the MCP Inspector.
 That walkthrough demonstrated what matters when evaluating MCP servers: naming conventions, schema design, documentation completeness.
 
@@ -20,24 +23,12 @@ You can miss schema inconsistencies, overlook documentation gaps, or fail to spo
 
 [Fiberplane Console](https://fiberplane.com/console) automates that review process.
 It systematically applies the same evaluation criteria to every tool, catching issues that manual inspection might miss.
-Console allows to copy the [detailed report](/resources/linear-console-report/) as Markdown and also povides a sharable link with the [review overview](https://console.fiberplane.com/review/SB7brGCcO0VvyeAg284vi)
+Console allows to copy the [detailed report](/resources/linear-console-report/) as Markdown and also provides a shareable link with the [review overview](https://console.fiberplane.com/review/SB7brGCcO0VvyeAg284vi)
 This post examines what Console revealed about Linear's MCP server.
-
-## What Fiberplane Console Analyzes
-
-Console examines MCP servers across several dimensions, similar to our manual review framework but with automated pattern detection:
-
-- **Tool naming conventions**: Consistency in naming patterns (`action_entity` format), clarity of verbs, and appropriate use of namespacing
-- **Schema validation**: Required vs. optional parameters, logical dependencies, and structural correctness
-- **Documentation completeness**: Descriptions, parameter explanations, return value details, and workflow guidance
-- **Token efficiency patterns**: Pagination options, filtering capabilities, and opportunities for verbosity controls
-
-The analysis generates a structured report with specific action items, overall impressions, and a breakdown by category.  
-Let's see what it found.
 
 ## What Console Revealed
 
-Running Linear's MCP server through Console generated a detailed report with specific findings and action items. Here's what the automated analysis caught:
+Console examines MCP servers across naming conventions, schema validation, documentation completeness, and token efficiency patterns—generating a structured report with specific action items. Here's what the automated analysis caught:
 
 ### Critical Schema Bug
 
@@ -56,14 +47,91 @@ That's wasted tokens and latency.
 ### Lack of Workflow Guidance
 
 Console found that related tools don't document their relationships. `list_cycles` requires a `teamId`, but `list_teams` doesn't mention you'll need that ID for cycle operations.
-Without explicit workflow hints, agents encounter errors and must backtrack:
+Without explicit workflow hints, agents must make multiple round trips to gather all required IDs.
 
-1. Agent needs to create an issue in a specific cycle
-2. Calls `list_cycles` → Error: missing required `teamId`
-3. Backtracks to call `list_teams` first
-4. Retries `list_cycles` with team ID
+**Real Example: Creating an Issue in the Current Sprint**
 
-With cross-references in tool descriptions, the agent would know upfront to get a team ID first.
+The agent knows the human-friendly information:
+
+- Team name: "Fiberplane"
+- Cycle: "Current cycle"
+- Issue title: "Fix login bug"
+
+But `create_issue` requires a cycle ID. Here's the actual request/response chain:
+
+**Round Trip #1: Get Team ID**
+
+```json
+Request:
+{
+  "tool": "mcp__linear__list_teams"
+}
+
+Response:
+{
+  "nodes": [
+    {
+      "id": "e4e21e92-55b4-488c-bbf3-323adf7ffd7d",
+      "name": "Fiberplane",
+      "key": "FP"
+    }
+  ]
+}
+```
+
+Agent extracts: `teamId = "e4e21e92-55b4-488c-bbf3-323adf7ffd7d"`
+
+**Round Trip #2: Get Cycle ID**
+
+```json
+Request:
+{
+  "tool": "mcp__linear__list_cycles",
+  "parameters": {
+    "teamId": "e4e21e92-55b4-488c-bbf3-323adf7ffd7d",
+    "type": "current"
+  }
+}
+
+Response:
+{
+  "nodes": [
+    {
+      "id": "2ecae560-d2e6-4c94-b88e-177198096e88",
+      "name": "Cycle 12",
+      "startsAt": "2025-12-16",
+      "endsAt": "2025-12-29"
+    }
+  ]
+}
+```
+
+Agent extracts: `cycleId = "2ecae560-d2e6-4c94-b88e-177198096e88"`
+
+**Round Trip #3: Finally Create the Issue**
+
+```json
+Request:
+{
+  "tool": "mcp__linear__create_issue",
+  "parameters": {
+    "title": "Fix login bug",
+    "team": "Fiberplane",
+    "cycle": "2ecae560-d2e6-4c94-b88e-177198096e88"
+  }
+}
+
+Response:
+{
+  "id": "abc123...",
+  "identifier": "FP-5569",
+  "title": "Fix login bug",
+  "status": "Triage",
+  "cycleId": "2ecae560-d2e6-4c94-b88e-177198096e88"
+}
+```
+
+**Cost:** What should be a single operation requires three LLM inference cycles and three API round trips. With cross-references in tool descriptions (`list_teams`: "Note: You'll need the team ID for querying cycles"), the agent could plan the entire sequence upfront.
 
 ### Missing Format Examples
 
@@ -131,17 +199,11 @@ These aren't schema bugs Console would catch—they're behavioral issues that on
 The integration surfaced a higher-level observation: the MCP server is "built as an API for machine consumption, not as tools for human-like LLMs."
 
 This isn't about any specific tool or parameter—it's about the fundamental design approach.
-APIs designed for programmatic access optimize for completeness and precision (use exact UUIDs, return all fields, require explicit parameters).
-Tools designed for LLM consumption optimize for natural language patterns (accept short IDs, return minimal defaults, infer context).
+APIs designed for programmatic access optimize for completeness and precision (return all fields, require explicit parameters).
+Tools designed for LLM consumption optimize for natural language patterns (return minimal defaults, infer context).
 
 Console can evaluate how well tools follow MCP best practices, but it can't assess whether the underlying design philosophy matches how agents actually reason.
 That only emerges from watching agents work.
-
-**Edge Cases and Heavy Usage**
-
-Beyond the issues found in initial integration testing, extended heavy usage often reveals additional edge cases.
-Running hundreds of operations exposes race conditions, pagination edge cases, rate limiting behaviors, and parameter combinations that weren't tested during initial development.
-These issues compound the problems already identified—a server with silent failures becomes even more problematic when agents hit those failures repeatedly across complex workflows.
 
 ## The Two-Stage Validation Path
 
@@ -156,7 +218,7 @@ It automates the checks our manual review demonstrated, applying the same princi
 
 ### Stage 2: Real Integration Testing
 
-Integration testing reveals what static analysis cannot: actual agent behavior patterns, domain-specific mental model mismatches (like short IDs vs UUIDs), design philosophy gaps that are technically correct but agent-unfriendly, and the severity of issues in real workflows.
+Integration testing reveals what static analysis cannot: actual agent behavior patterns, design philosophy gaps that are technically correct but agent-unfriendly, and the severity of issues in real workflows.
 
 **Measure and adjust:** Track token consumption, failure-and-retry loops, and where agents consistently guess incorrectly.
 Validate that agent mental models align with tool design.
@@ -164,37 +226,14 @@ Validate that agent mental models align with tool design.
 **Note on model evolution:** As new Claude models are released, agent reasoning patterns may change—a tool that works well with one model might surface different friction points with another.
 Integration testing should be revisited when upgrading to new model versions to catch behavioral shifts.
 
-**Why both matter:** Console checks structure, documentation, and best practices.
-Integration testing reveals emergent behavior—the patterns that only surface when agents use tools to accomplish real tasks.
-
 ## Conclusion
 
-Fiberplane Console provides essential automated validation for MCP servers, catching critical issues like schema bugs, documentation gaps, and token efficiency problems that would require painstaking manual review to find.
-For developers, it's a systematic first line of defense.
+Console catches what static analysis can catch: schema bugs, missing documentation, naming violations, and token efficiency gaps.
+Integration testing reveals what only emerges through use: silent failures, retry loops, and mismatches between how tools are designed and how agents reason.
 
-But Console's own report acknowledges: "For comprehensive evaluation, running this server with an actual agent is essential."
-That's not a disclaimer—it's the core insight.
-
-Fiberplane's Console review tells you if your tools are well-formed.
-Integration testing tells you if they're _useful_.
-Linear's MCP server is structurally sound. Console confirms excellent naming conventions and thoughtful abstractions.
-Yet real agent usage revealed friction the review could predict: cascading ID fetching round-trips, and information overload overwhelming agents even when schemas are correct.
-
-These aren't bugs—they're emergent properties of how agents interact with tools.
-The Linear MCP server demonstrates that structural correctness isn't sufficient.
-Even well-architected servers can create friction when agent reasoning patterns don't align with tool design.
-
-Console finds what's wrong with your tools.
-Integration testing finds whether your tools work the way agents think.
-
-**The Reality of MCP Server Readiness**
-
-This analysis reveals a broader truth: many MCP servers in the ecosystem aren't production-ready for agent consumption.
-Linear's server is well-architected compared to most, yet still exhibits significant friction.
+Linear's MCP server demonstrates that structural correctness isn't sufficient.
+Even servers with solid architecture can create friction when agent reasoning patterns don't align with tool design.
 The gap between "technically functional" and "agent-friendly" is wider than many builders realize.
 
-**Bridging the Gap**
-
-While waiting for MCP servers to mature, you can improve agent behavior through contextual guidance.
-Claude Code skills and plugins can provide agents with server-specific context—common pitfalls, workflow patterns, parameter formats—that compensates for poor documentation or unintuitive design.
-This doesn't fix underlying server issues, but it reduces agent trial-and-error by front-loading knowledge that would otherwise be learned through failures.
+For developers building MCP servers: use Console for immediate feedback on structure and best practices, then test with real agents to validate that your design choices match how LLMs actually work.
+For teams evaluating MCP servers: Console tells you if tools are well-formed. Integration testing tells you if they're useful.
