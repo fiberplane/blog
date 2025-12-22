@@ -151,9 +151,165 @@ Fiberplane Console is great for an automatic review on the design principals of 
 providing builders with actionable feedback for improving their servers and alerting users to potential issues that could impact token consumption and latency.
 Console excels at catching schema bugs, documentation gaps, and efficiency problems before you waste time integrating—but agent integration testing is essential for revealing runtime behavior that only appears when tools are actually called with real data.
 
-After reviwing the Linear MCP server initially with Fiberplane Console, we ran it with agents performing real project management tasks.
-The results were revealing: Console caught design issues (like the `get_issue_status` schema bug),
-and integration testing uncovered problems that impact agent workflows: silent failures and validation inconsistencies that create debugging problems .
+### Real-World Integration Testing with Claude Code
+
+To complement Fiberplane Console's static analysis, we conducted hands-on integration testing using Claude Code, Anthropic's agentic CLI tool. Unlike automated testing frameworks, Claude Code tests MCP servers the way agents actually use them—through conversational, goal-oriented interactions.
+
+**Test Setup:**
+
+- **MCP Server:** Linear MCP server (HTTP transport)
+- **Agent:** Claude Code (Sonnet 4.5)
+- **Workspace:** Live Fiberplane Linear workspace
+- **Authentication:** Connected via Claude Code's MCP integration
+- **Scope:** 15 manual test cases across 7 different tools
+
+**Why Claude Code?**
+
+Claude Code provides a realistic testing environment because it's an actual AI agent that needs to accomplish tasks using MCP servers. Rather than running scripted test cases, we gave Claude Code real goals (like "check the status of issue FP-5557" or "create a test issue with markdown formatting") and observed how it interacted with the Linear MCP server.
+
+### Testing Methodology
+
+Our approach was exploratory rather than exhaustive. We focused on scenarios that static analysis cannot catch:
+
+**1. Happy Path Validation**
+
+First, we verified basic operations worked as expected:
+- Creating issues with markdown descriptions
+- Listing issues with multiple filters (`assignee: "me"`, `state: "Todo"`)
+- Retrieving issue details by short ID (e.g., FP-5557)
+- Updating issue titles and descriptions
+
+**Result:** All happy paths worked smoothly. The MCP server handled these common operations without issues.
+
+**2. Edge Case Testing**
+
+Then we pushed boundaries to see how the server handles invalid inputs:
+
+```json
+// Test: Invalid priority value
+create_issue({
+  title: "Test Invalid Priority",
+  team: "Fiberplane",
+  priority: 99  // Max is 4
+})
+// ✅ Result: Clear error - "priority must not be greater than 4"
+
+// Test: Excessive pagination limit
+list_issues({
+  limit: 300  // Max is 250
+})
+// ✅ Result: Validation error with detailed message
+
+// Test: Empty description
+create_issue({
+  title: "Test Empty Description",
+  team: "Fiberplane",
+  description: ""
+})
+// ✅ Result: Succeeded, empty descriptions are valid
+```
+
+**3. Silent Failure Detection**
+
+The most revealing tests involved operations that should fail but didn't:
+
+```json
+// Test: Invalid state name
+update_issue({
+  id: "FP-5567",
+  state: "InvalidStateName"
+})
+// ❌ Result: Success response, but state unchanged
+// Problem: No error, no indication the update was ignored
+```
+
+Claude Code received a 200 success response with the issue data, but the status field remained "Triage" instead of changing to the invalid state name. Without comparing the requested state to the returned state, an agent has no way to know the operation failed.
+
+```json
+// Test: Nonexistent user filter
+list_issues({
+  assignee: "NonexistentUser",
+  limit: 5
+})
+// ❌ Result: Empty array []
+// Problem: Can't distinguish "no results" from "invalid user"
+```
+
+**4. Complex Data Structure Validation**
+
+```json
+// Test: Invalid link array
+create_issue({
+  title: "Test Links",
+  team: "Fiberplane",
+  links: [
+    {url: "https://example.com", title: ""},  // Empty title
+    {url: "invalid-url", title: "Bad URL"}     // Malformed URL
+  ]
+})
+// ✅ Result: Detailed validation errors:
+// - "String must contain at least 1 character(s)" for empty title
+// - "Invalid url" for malformed URL
+```
+
+This validation was excellent—clear, specific, and actionable.
+
+**5. Missing Operations**
+
+We also discovered gaps by attempting common operations:
+
+```json
+// Test: Delete issue
+delete_issue({id: "FP-5567"})
+// ❌ Result: Tool doesn't exist
+// Problem: Can create/update/read but not delete (incomplete CRUD)
+```
+
+**Key Findings from Testing:**
+
+| Finding                          | Impact  | Example                                                              |
+|----------------------------------|---------|----------------------------------------------------------------------|
+| Silent failures on invalid state | High    | `update_issue(state: "InvalidStateName")` succeeds but state unchanged |
+| Ambiguous empty results          | Medium  | `list_issues(assignee: "NonexistentUser")` returns `[]` instead of error |
+| Inconsistent error formats       | Low     | Some errors verbose JSON, others friendly messages                   |
+| Missing delete operation         | Medium  | Cannot delete issues via MCP (incomplete CRUD)                       |
+| Excellent link validation        | ✅ Good | Clear, specific errors for malformed URLs/titles                     |
+
+**What This Testing Approach Revealed:**
+
+The Linear MCP server works well for standard operations but has rough edges that only appear during real agent usage.
+
+Strengths confirmed:
+- Parameter flexibility (`assignee: "me"`, emails, names all work)
+- Markdown rendering in descriptions
+- Both short IDs (FP-5567) and UUIDs accepted
+- Good validation on some parameters (priority, limit, links)
+
+Issues discovered:
+- Silent failures make debugging difficult
+- Empty results are ambiguous (error vs. no matches?)
+- Missing operations (no delete)
+- Inconsistent error message formats
+
+**The Value of Manual Agent Testing:**
+
+Static analysis (like Fiberplane Console) excels at catching design problems—schema bugs, documentation gaps, naming inconsistencies. But it cannot tell you if a tool behaves correctly when actually used.
+
+Claude Code's exploratory testing revealed behavioral issues that only manifest at runtime:
+- Operations that succeed without error but silently fail
+- Ambiguous responses that confuse agents
+- Missing functionality that blocks workflows
+- Inconsistent error handling
+
+Both approaches are complementary: Console catches issues before you integrate, while Claude Code catches issues before your agents fail in production.
+
+**Test Artifacts:**
+
+Our testing created real issues in the Fiberplane workspace:
+- FP-5567: "Test Issue - Agent Integration Testing"
+- FP-5568: "Test Empty Description"
+
+These serve as evidence of our testing but also highlight an important consideration: integration testing creates side effects. In production environments, you need proper cleanup procedures or dedicated test workspaces.
 
 ### Problems Integration Revealed
 
