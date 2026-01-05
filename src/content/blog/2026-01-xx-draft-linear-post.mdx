@@ -13,6 +13,10 @@ tags:
 Linear's MCP server is usable and effective for real workflows, but has notable friction points: it requires 3 API round trips for basic workflows, silently ignores invalid inputs, and has a schema bug in an edge-case tool.
 Here's what automated Console analysis caught—and what only real integration testing revealed about actual agent usability.
 
+**TL;DR:** Linear's MCP server scores 7/10: usable for real work, but watch for silent failures.
+State updates can return success while doing nothing. Automated analysis catches schema bugs and documentation gaps;
+integration testing reveals the runtime issues that actually hurt.
+
 In our [previous post](/blog/mcp-server-analysis-linear), we manually reviewed Linear's MCP server.
 Inspired by an Anthropic blogpost about [writing tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents)
 we looked at tool definitions, parameter validation, and output structures through the MCP Inspector.
@@ -23,21 +27,18 @@ You can miss schema inconsistencies, overlook documentation gaps, or fail to spo
 
 [Fiberplane Console](https://fiberplane.com/console) automates that review process.
 It systematically applies the same evaluation criteria to every tool, catching issues that manual inspection might miss.
-Console allows to copy the [detailed report](/resources/linear-console-report/) as Markdown and also provides a shareable link with the [review overview](https://console.fiberplane.com/review/SB7brGCcO0VvyeAg284vi)
+Console allows you to copy the [detailed report](/resources/linear-console-report/) as Markdown and also provides a shareable link with the [review overview](https://console.fiberplane.com/review/SB7brGCcO0VvyeAg284vi)
 This post examines what Console revealed about Linear's MCP server.
 
 ## What Console Revealed
 
 Console examines MCP servers across naming conventions, schema validation, documentation completeness, and token efficiency patterns—generating a structured report with specific action items. Here's what the automated analysis caught:
 
-### Schema Bug in Edge-Case Tool
+### Schema Bug (Low-Severity)
 
-Console flagged that `get_issue_status` requires ALL THREE of `id`, `name`, AND `team` as required fields, a logical inconsistency that makes the tool unusable.
-The schema should require `team` plus EITHER `id` OR `name`, not both. This is exactly the type of bug that's easy to miss when manually scanning 23 tools, but automated validation catches instantly.
-
-**Reality Check from Integration Testing:** This turns out to be low-severity. Throughout real agent workflows—listing issues, creating issues, updating states, getting issue details—`get_issue_status` was never needed.
-It's for querying metadata _about_ status definitions (like "what's the description of the 'In Progress' state?"), not for getting an issue's current status (which is included in every issue response).
-It's a nice-to-have administrative tool, not a core workflow blocker.
+Console flagged that `get_issue_status` requires all three of `id`, `name`, and `team`—a logical inconsistency since you'd typically have one or the other.
+Integration testing revealed this is low-impact: the tool is for querying status _definitions_, not issue state, and never came up in real workflows.
+Still, it's the kind of bug that's easy to miss manually but automated validation catches instantly.
 
 ### Missing Return Value Documentation
 
@@ -134,6 +135,7 @@ Response:
 ```
 
 **Measured Cost:**
+
 - **~500 tokens of overhead** per cascade (measured from actual responses)
 - **~600ms additional latency** (estimated, not precisely measured)
 - **Three LLM inference cycles** instead of one
@@ -147,33 +149,35 @@ Without seeing `[{url: "https://...", title: "Example"}]` in the description, ag
 
 ## Testing Real Agent Integration
 
-Fiberplane Console is great for an automatic review on the design principals of an MCP server,
-providing builders with actionable feedback for improving their servers and alerting users to potential issues that could impact token consumption and latency.
-Console excels at catching schema bugs, documentation gaps, and efficiency problems before you waste time integrating—but agent integration testing is essential for revealing runtime behavior that only appears when tools are actually called with real data.
+Automated analysis catches schema bugs, documentation gaps, and efficiency problems before you waste time integrating.
+But it can't tell you if a tool behaves correctly when actually used—that requires integration testing with real agent interactions.
 
 ### Real-World Integration Testing with Claude Code
 
-To complement Fiberplane Console's static analysis, we conducted hands-on integration testing using Claude Code, Anthropic's agentic CLI tool. Unlike automated testing frameworks, Claude Code tests MCP servers the way agents actually use them—through conversational, goal-oriented interactions.
+To complement Console's static analysis, we tested the Linear MCP server using Claude Code, Anthropic's agentic CLI tool. Unlike scripted tests, Claude Code interacts with MCP servers the way agents actually use them—through conversational, goal-oriented requests. This surfaces runtime issues that only appear when tools are called with real data.
 
-**Test Setup:**
+#### Test Setup
 
 - **MCP Server:** Linear MCP server (HTTP transport)
 - **Agent:** Claude Code (Sonnet 4.5)
-- **Workspace:** Live Fiberplane Linear workspace
+- **Workspace:** Live Fiberplane Test Linear workspace
 - **Authentication:** Connected via Claude Code's MCP integration
 - **Scope:** 15 manual test cases across 7 different tools
 
 **Why Claude Code?**
 
-Claude Code provides a realistic testing environment because it's an actual AI agent that needs to accomplish tasks using MCP servers. Rather than running scripted test cases, we gave Claude Code real goals (like "check the status of issue FP-5557" or "create a test issue with markdown formatting") and observed how it interacted with the Linear MCP server.
+Claude Code provides a realistic testing environment because it's an AI agent that can integrate with MCP servers to accomplish tasks.
+Rather than running scripted test cases, we gave Claude Code real goals (like "check the status of issue FP-5557" or "create a test issue with markdown formatting") and observed how it interacted with the Linear MCP server.
 
-### Testing Methodology
+#### Testing Methodology
 
-Our approach was exploratory rather than exhaustive. We focused on scenarios that static analysis cannot catch:
+Our approach was exploratory rather than exhaustive.
+We focused on scenarios that Fiberplane Console Review cannot catch:
 
-**1. Happy Path Validation**
+#### 1. Happy Path Validation
 
 First, we verified basic operations worked as expected:
+
 - Creating issues with markdown descriptions
 - Listing issues with multiple filters (`assignee: "me"`, `state: "Todo"`)
 - Retrieving issue details by short ID (e.g., FP-5557)
@@ -181,7 +185,7 @@ First, we verified basic operations worked as expected:
 
 **Result:** All happy paths worked smoothly. The MCP server handled these common operations without issues.
 
-**2. Edge Case Testing**
+#### 2. Edge Case Testing
 
 Then we pushed boundaries to see how the server handles invalid inputs:
 
@@ -209,7 +213,10 @@ create_issue({
 // ✅ Result: Succeeded, empty descriptions are valid
 ```
 
-**3. Silent Failure Detection**
+**Note on error formats:** While validation worked, error formats were inconsistent—`limit: 300` produces verbose JSON schema details (`{"code": "too_big", "maximum": 250, ...}`) while `priority: 99` returns a friendly message.
+This inconsistency makes error parsing unpredictable for agents.
+
+#### 3. Silent Failure Detection
 
 The most revealing tests involved operations that should fail but didn't:
 
@@ -235,7 +242,12 @@ list_issues({
 // Problem: Can't distinguish "no results" from "invalid user"
 ```
 
-**4. Complex Data Structure Validation**
+**Impact:**
+During testing, 13% of operations with intentionally invalid inputs succeeded without errors.
+In realistic usage where inputs are more likely to be valid, this drops to around 2%.
+These silent failures force agents into guessing about whether their inputs were valid, and create problems when agents report "task complete" but state wasn't actually changed.
+
+#### 4. Complex Data Structure Validation
 
 ```json
 // Test: Invalid link array
@@ -252,9 +264,9 @@ create_issue({
 // - "Invalid url" for malformed URL
 ```
 
-This validation was excellent—clear, specific, and actionable.
+This validation was excellent: clear, specific, and actionable.
 
-**5. Missing Operations**
+#### 5. Missing Operations
 
 We also discovered gaps by attempting common operations:
 
@@ -265,219 +277,75 @@ delete_issue({id: "FP-5567"})
 // Problem: Can create/update/read but not delete (incomplete CRUD)
 ```
 
-**Key Findings from Testing:**
+This blocks agents from cleaning up test data or implementing workflows that require removing issues.
 
-| Finding                          | Impact  | Example                                                              |
-|----------------------------------|---------|----------------------------------------------------------------------|
-| Silent failures on invalid state | High    | `update_issue(state: "InvalidStateName")` succeeds but state unchanged |
-| Ambiguous empty results          | Medium  | `list_issues(assignee: "NonexistentUser")` returns `[]` instead of error |
-| Inconsistent error formats       | Low     | Some errors verbose JSON, others friendly messages                   |
-| Missing delete operation         | Medium  | Cannot delete issues via MCP (incomplete CRUD)                       |
-| Excellent link validation        | ✅ Good | Clear, specific errors for malformed URLs/titles                     |
+### Key Findings from AI Agent Integration Testing
 
-**What This Testing Approach Revealed:**
+| Finding                          | Impact | Example                                                                  |
+| -------------------------------- | ------ | ------------------------------------------------------------------------ |
+| Silent failures on invalid state | High   | `update_issue(state: "InvalidStateName")` succeeds but state unchanged   |
+| Ambiguous empty results          | Medium | `list_issues(assignee: "NonexistentUser")` returns `[]` instead of error |
+| Inconsistent error formats       | Low    | Some errors verbose JSON, others friendly messages                       |
+| Missing delete operation         | Medium | Cannot delete issues via MCP (incomplete CRUD)                           |
+| Excellent link validation        | Good   | Clear, specific errors for malformed URLs/titles                         |
 
-The Linear MCP server works well for standard operations but has rough edges that only appear during real agent usage.
+The Linear MCP server handles standard workflows smoothly.
+The rough edges only surface in edge-case tools and exploratory agent scenarios.
 
-Strengths confirmed:
+### Strengths confirmed
+
 - Parameter flexibility (`assignee: "me"`, emails, names all work)
 - Markdown rendering in descriptions
 - Both short IDs (FP-5567) and UUIDs accepted
 - Good validation on some parameters (priority, limit, links)
 
-Issues discovered:
-- Silent failures make debugging difficult
-- Empty results are ambiguous (error vs. no matches?)
-- Missing operations (no delete)
-- Inconsistent error message formats
-
-**The Value of Manual Agent Testing:**
-
-Static analysis (like Fiberplane Console) excels at catching design problems—schema bugs, documentation gaps, naming inconsistencies. But it cannot tell you if a tool behaves correctly when actually used.
-
-Claude Code's exploratory testing revealed behavioral issues that only manifest at runtime:
-- Operations that succeed without error but silently fail
-- Ambiguous responses that confuse agents
-- Missing functionality that blocks workflows
-- Inconsistent error handling
-
-Both approaches are complementary: Console catches issues before you integrate, while Claude Code catches issues before your agents fail in production.
-
-**Test Artifacts:**
-
-Our testing created real issues in the Fiberplane workspace:
-- FP-5567: "Test Issue - Agent Integration Testing"
-- FP-5568: "Test Empty Description"
-
-These serve as evidence of our testing but also highlight an important consideration: integration testing creates side effects. In production environments, you need proper cleanup procedures or dedicated test workspaces.
-
-### Problems Integration Revealed
-
-#### Silent Failures and Validation Inconsistencies
-
-Real integration testing uncovered several error handling issues the Console analysis couldn't detect.
-
-**Error handling problems:** Calling `update_issue` with an invalid state name (e.g., `state: "InvalidStateName"`) succeeds without error—but the state remains unchanged, creating debugging nightmares where agents think operations succeeded when they were silently ignored.
-
-````bash
-The Test Case: Invalid State Name
-
-  Request:
-  {
-    "tool": "mcp__linear__update_issue",
-    "parameters": {
-      "id": "FP-5567",
-      "state": "InvalidStateName"
-    }
-  }
-
-  Response (200 Success):
-  {
-    "id": "e1136ed0-1f4c-402d-be4a-f24b08fb34d6",
-    "identifier": "FP-5567",
-    "title": "Updated Title Only",
-    "description": "Testing Markdown:\n\n* **Bold text**\n* `code inline`\n* [Link](https://example.com)\n\n```javascript\nconsole.log('code block');\n```",
-    "url": "https://linear.app/fiberplane/issue/FP-5567/updated-title-only",
-    "gitBranchName": "fp-5567-updated-title-only",
-    "createdAt": "2025-12-22T09:51:45.758Z",
-    "updatedAt": "2025-12-22T09:52:03.521Z",
-    "status": "Triage",   // ← UNCHANGED! Still "Triage", not "InvalidStateName"
-    "labels": ["Bug"],
-    "attachments": [],
-    "documents": [],
-    "createdBy": "Nele Uhlemann",
-    "createdById": "cd16ee6f-6ed5-4d2b-8839-db45c21b116f",
-    "team": "Fiberplane",
-    "teamId": "e4e21e92-55b4-488c-bbf3-323adf7ffd7d"
-  }
-````
-
-Similarly, `list_issues(assignee: "NonexistentUser")` returns an empty array `[]` instead of an error, making it impossible for agents to distinguish "no matching issues" from "invalid user."
-
-**Observed Silent Failure Rate:** During testing, 13% of operations with intentionally invalid inputs succeeded without errors—though in realistic usage where inputs are more likely to be valid, this drops to around 2%. These silent failures force agents into guessing games about whether their inputs were valid.
-
-#### Completeness gaps
-
-Validation errors return inconsistent formats—`limit: 300` produces verbose JSON schema details (`{"code": "too_big", "maximum": 250, ...}`) while `priority: 99` returns a friendly message ("priority must not be greater than 4"), making error parsing unpredictable.
-The server also lacks `delete_issue` despite having create/update/read operations, blocking agents from complete issue lifecycle management without a way to clean up test data.
-These aren't schema bugs Console would catch—they're behavioral issues that only surface when agents actually call the tools and process responses.
-
-#### The Design Philosophy Gap
-
-The integration surfaced a higher-level observation: the MCP server is "built as an API for machine consumption, not as tools for human-like LLMs."
-
-This isn't about any specific tool or parameter—it's about the fundamental design approach.
-APIs designed for programmatic access optimize for completeness and precision (return all fields, require explicit parameters).
-Tools designed for LLM consumption optimize for natural language patterns (return minimal defaults, infer context).
-
-Console can evaluate how well tools follow MCP best practices, but it can't assess whether the underlying design philosophy matches how agents actually reason.
-That only emerges from watching agents work.
-
-### What We Can and Can't Measure
+### Measurement Methodology & Constraints
 
 Being honest about measurement limitations:
 
-**What We Quantified:**
-- ✅ Token waste from cascading calls: ~500 tokens per workflow
-- ✅ Silent failure rate in testing: 13% (with intentionally invalid inputs), ~2% in realistic usage
+#### Observed Metrics
 
-**What We Estimated (Not Precisely Measured):**
-- ⚠️ Latency impact: ~600ms additional delay per cascade
-- ⚠️ Real-world failure rate: Small sample size limits confidence
+- Token waste from cascading calls: ~500 tokens per workflow
+- Silent failure rate in testing: 13% (with intentionally invalid inputs), ~2% in realistic usage
 
-**What's Hard to Quantify:**
-- ❌ Developer debugging time when agents report "task complete" but state wasn't changed
-- ❌ Agent confusion cost from ambiguous errors
-- ❌ Downstream effects of trial-and-error behavior
+#### Secondary Estimates
 
-**The Real Cost Analysis:**
+- Latency impact: ~600ms additional delay per cascade
+- Real-world failure rate: Small sample size limits confidence
 
-At typical usage volumes, the direct costs are modest:
-- **Token overhead:** ~$2/month for a team using this regularly
-- **Latency:** Noticeable but tolerable (most workflows complete in under 2 seconds)
+#### Unmeasured Effects
 
-But **silent failures are the real problem.** When an agent reports success but the operation was silently ignored, tracking down that discrepancy costs hours of developer time. This isn't about tokens or latency—it's about trust and debuggability.
+- Developer debugging time when agents report "task complete" but state wasn't changed
+- Agent confusion cost from ambiguous errors
+- Downstream effects of trial-and-error behavior
 
-## The Pragmatic Assessment: Would You Still Use It?
+#### The Real Cost
 
-Despite the issues identified through both Console analysis and integration testing, the answer is: **Yes, absolutely.**
+The token and latency overhead is negligible for most teams. **Silent failures are the real problem.**
+When an agent reports success but the operation was silently ignored, tracking down that discrepancy costs developer time.
+This isn't about tokens. It's about trust and debuggability.
 
-Here's why Linear's MCP server is still valuable for real work:
+## Net Assessment
 
-### What Actually Works Well
+Despite the issues documented above, the tool is worth adopting. **7/10.**
 
-- **Gets the job done** - Successfully completed all Linear tasks attempted during testing
-- **Excellent parameter flexibility** - Accepts `assignee: "me"`, emails, names, and short IDs interchangeably
-- **Comprehensive coverage** - Handles most Linear operations teams need
-- **Good discoverability** - Clear naming and structure make it easy to find the right tools
-- **No hard blockers** - Even the issues found didn't prevent completing workflows
+- **For demos or exploration?** Works fine as-is.
+- **For production agent work?** Yes, but add guardrails: validate state after updates, handle empty results defensively.
+- **For mission-critical automation?** Wait for silent failures to be fixed, or build your own validation layer.
 
-### Issues You'd Work Around (Prioritized by Impact)
+### What Would Make It Great
 
-**High Impact (Fix These First):**
-- **Silent failures** - Add validation layers (e.g., "after updating state, verify it changed"). This is the real blocker for production use—debugging phantom failures wastes hours.
-
-**Medium Impact (Annoying but Manageable):**
-- **Ambiguous errors** - Handle empty results defensively
-- **Cascading ID fetches** - Cache team/project/cycle IDs to reduce round trips (~500 tokens overhead, ~$2/month at typical volumes)
-
-**Low Impact (Minor Inconveniences):**
-- **Missing delete operations** - Fall back to Linear UI when needed
-
-### The Honest Rating: 7/10
-
-This is a "good enough for real work despite its flaws" server.
-It's like using a library with quirks—you work around them because building it yourself would be worse.
-
-**For production agent work?** Yes, but with guardrails: validation checks after critical updates, defensive handling of empty results, and monitoring for silent failures.
-
-**For demos or exploration?** Absolutely, it works fine as-is.
-
-**For mission-critical automation?** You'd want the silent failure issues fixed first, or build your own validation layer.
-
-**What would make it great (in priority order):**
-
-1. **Fix silent failures** - Validate state names, return errors for invalid inputs instead of silently ignoring them
-2. **Better error messages** - Consistent error format across all validation failures
-3. **Smart ID resolution** - Accept human-friendly names (team: "Fiberplane") and resolve IDs server-side
-4. **Add delete operations** - Complete CRUD for testing and cleanup
-
-The Linear MCP server demonstrates that "technically functional" and "production-ready" aren't the same.
-It's solid and usable, but the gap between Console's structural analysis and real-world agent experience shows why both validation stages matter.
-
-## The Two-Stage Validation Path
-
-Our experience reveals a clear validation strategy for MCP servers:
-
-### Stage 1: Automated Static Analysis with Fiberplane Console
-
-Console catches schema bugs, missing documentation, naming violations, token efficiency issues, and missing workflow guidance.
-It automates the checks our manual review demonstrated, applying the same principles systematically across every tool—instantly and consistently, especially valuable when evaluating multiple MCP servers.
-
-**Fix immediately:** Schema errors, add return value documentation, include workflow guidance and format examples, implement verbosity controls.
-
-### Stage 2: Real Integration Testing
-
-Integration testing reveals what static analysis cannot: actual agent behavior patterns, design philosophy gaps that are technically correct but agent-unfriendly, and the severity of issues in real workflows.
-
-**Measure and adjust:** Track token consumption, failure-and-retry loops, and where agents consistently guess incorrectly.
-Validate that agent mental models align with tool design.
-
-**Note on model evolution:** As new Claude models are released, agent reasoning patterns may change—a tool that works well with one model might surface different friction points with another.
-Integration testing should be revisited when upgrading to new model versions to catch behavioral shifts.
+1. Fix silent failures — return errors for invalid inputs
+2. Consistent error format across validation failures
+3. Server-side ID resolution (accept "Fiberplane" instead of UUIDs)
+4. Add delete operations
 
 ## Conclusion
 
-Console catches what static analysis can catch: schema bugs, missing documentation, naming violations, and token efficiency gaps.
-Integration testing reveals what only emerges through use: silent failures, retry loops, and mismatches between how tools are designed and how agents reason.
+**The two-stage approach**: Use automated analysis (like Console) to catch schema bugs, documentation gaps, and efficiency issues upfront.
+Then run real integration tests with an agent to surface runtime behavior—silent failures, retry loops, and design mismatches that only appear through use.
 
-Linear's MCP server demonstrates that structural correctness isn't sufficient but also shows that "good enough" is often truly good enough.
-Despite friction points identified through both Console and integration testing, the server successfully handles real workflows and remains usable for production work.
-The gap between "technically functional" and "perfectly agent-friendly" matters less than the gap between "usable with workarounds" and "fundamentally broken."
+**For MCP server builders:** Automated analysis gives immediate feedback on structure; integration testing validates that your design matches how agents actually reason.
+Fix blocking issues (silent failures, ambiguous errors) before polishing edge cases.
 
-**For developers building MCP servers:** Use Console for immediate feedback on structure and best practices, then test with real agents to validate that your design choices match how LLMs actually work.
-Don't let perfect be the enemy of good—focus on fixing blocking issues (silent failures, ambiguous errors) before polishing edge cases.
-
-**For teams evaluating MCP servers:** Console tells you if tools are well-formed.
-Integration testing tells you if they're useful.
-But remember: a 7/10 server you can use today beats waiting for a perfect 10/10 that doesn't exist yet.
+**For teams evaluating MCP servers:** A 7/10 server you can use today beats waiting for a perfect 10/10 that doesn't exist yet.

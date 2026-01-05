@@ -400,6 +400,49 @@ const formattedUpdatedDate = updatedDate
     display: block;
   }
 
+  /* Table styles */
+  .post-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    font-size: 0.9375rem;
+    overflow-x: auto;
+    display: block;
+  }
+
+  .post-content :global(thead) {
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .post-content :global(th) {
+    text-align: left;
+    padding: 0.875rem 1.25rem;
+    font-weight: 600;
+    color: var(--color-heading);
+    white-space: nowrap;
+  }
+
+  .post-content :global(td) {
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
+    vertical-align: top;
+  }
+
+  .post-content :global(tr:last-child td) {
+    border-bottom: none;
+  }
+
+  .post-content :global(tbody tr:hover) {
+    background-color: var(--color-bg-secondary);
+  }
+
+  /* First column styling for impact badges */
+  .post-content :global(td:first-child) {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
   @media (max-width: 768px) {
     .blog-post {
       padding: 2rem 1.5rem;
@@ -420,6 +463,15 @@ const formattedUpdatedDate = updatedDate
 
     .post-content :global(p) {
       font-size: 1rem;
+    }
+
+    .post-content :global(table) {
+      font-size: 0.875rem;
+    }
+
+    .post-content :global(th),
+    .post-content :global(td) {
+      padding: 0.75rem 1rem;
     }
   }
 </style>
